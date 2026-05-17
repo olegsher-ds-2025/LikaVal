@@ -1,0 +1,59 @@
+# LikaVal configuration
+# Override any value via environment variable or .env file.
+
+ollama:
+  host: "${OLLAMA_HOST:http://localhost:11434}"
+  model: "${OLLAMA_MODEL:llava}"
+  timeout: 120  # seconds
+  prompts:
+    title: "You are a product copywriter for a handmade ceramics brand. Given the image, write a short, evocative product title (max 10 words). Respond with the title only."
+    description: "Write a 2-3 sentence product description for this handmade ceramic piece. Focus on form, texture, and craftsmanship. Be warm and human."
+    seo_tags: "List 10 SEO tags for this ceramic product, comma-separated, lowercase."
+    social_caption: "Write an engaging Instagram/Facebook caption for this handmade ceramic piece. Include 3-5 relevant hashtags."
+    etsy_listing: "Write an Etsy product listing for this handmade ceramic. Include: title, description (150-200 words), materials, and 13 tags."
+
+gdrive:
+  folder_id: "${GDRIVE_FOLDER_ID:}"
+  credentials_file: "${GDRIVE_CREDENTIALS_FILE:config/gdrive_credentials.json}"
+  download_dir: "backend/downloads"
+  supported_image_formats: [jpg, jpeg, png, webp]
+  supported_video_formats: [mp4, mov]
+
+currency:
+  ils_to_usd_ratio: "${ILS_TO_USD_RATIO:0.80}"
+
+github:
+  token: "${GITHUB_TOKEN:}"
+  repo: "${GITHUB_REPO:}"
+  pages_branch: "${GITHUB_PAGES_BRANCH:gh-pages}"
+  frontend_dir: "frontend"
+  commit_message: "chore: auto-publish product updates"
+
+etsy:
+  api_key: "${ETSY_API_KEY:}"
+  shop_id: "${ETSY_SHOP_ID:}"
+  enabled: false  # set to true when credentials are configured
+
+facebook:
+  page_id: "${FACEBOOK_PAGE_ID:}"
+  access_token: "${FACEBOOK_ACCESS_TOKEN:}"
+  enabled: false  # set to true when credentials are configured
+
+scheduler:
+  cron: "${PUBLISH_SCHEDULE:0 2 * * *}"
+
+state:
+  dir: "state"
+  products_file: "state/products.json"
+  sync_log_file: "state/sync_log.json"
+
+logging:
+  dir: "logs"
+  level: "INFO"
+  max_bytes: 10485760   # 10 MB
+  backup_count: 5
+
+frontend:
+  output_dir: "frontend"
+  languages: [en, ru, he]
+  default_language: en
