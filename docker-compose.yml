@@ -1,0 +1,14 @@
+services:
+  likaval-backend:
+    build: .
+    container_name: likaval-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./config:/app/config          # editable config — survives rebuilds
+      - ./state:/app/state            # pipeline state
+      - ./logs:/app/logs              # log files
+      - ./backend/downloads:/app/backend/downloads  # temporary media
+    environment:
+      - PYTHONUNBUFFERED=1
