@@ -329,6 +329,25 @@ main { flex: 1; }
 .footer-nav a { color: var(--color-base); font-size: var(--fs-small); opacity: 0.7; }
 .footer-nav a:hover { opacity: 1; }
 
+.footer-contacts {
+  display: flex;
+  gap: var(--sp-24);
+  flex-wrap: wrap;
+  margin: var(--sp-40) 0 var(--sp-16);
+}
+
+.footer-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  opacity: 0.85;
+  transition: opacity 0.2s;
+}
+.footer-contact-link:hover { opacity: 1; }
+
 .footer-bottom {
   max-width: var(--wide-size);
   margin: var(--sp-40) auto 0;
