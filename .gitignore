@@ -1,6 +1,7 @@
 # Environment & secrets
 .env
 *.env.local
+config/gdrive_credentials.json
 
 # Python
 __pycache__/

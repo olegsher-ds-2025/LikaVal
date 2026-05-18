@@ -6,6 +6,13 @@ images and videos, and parses folder names into product metadata.
 Folder naming convention: YYYYMMDD_PRICE[_sold]
   Example: 20260517_200        → available, 200 ILS
            20250101_100_sold   → sold, 100 ILS
+
+Google Drive authentication uses a service account key file.
+Share the target Drive folder with the service account e-mail address.
+
+Root folder resolution order:
+  1. GDRIVE_FOLDER_ID env / config  — used directly when non-empty
+  2. GDRIVE_FOLDER_NAME env / config — looked up by name in My Drive root
 """
 
 import logging
@@ -16,7 +23,6 @@ from pathlib import Path
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
-import io
 
 from backend.src.config import CONFIG
 from backend.src.state_manager import is_processed, upsert_product, log_error
@@ -26,6 +32,8 @@ logger = logging.getLogger(__name__)
 _FOLDER_RE = re.compile(r"^(\d{8})_(\d+)(_sold)?$")
 _SUPPORTED_IMAGES = {f.lower() for f in CONFIG["gdrive"]["supported_image_formats"]}
 _SUPPORTED_VIDEOS = {f.lower() for f in CONFIG["gdrive"]["supported_video_formats"]}
+_MAX_IMAGES: int = int(CONFIG["gdrive"].get("max_images", 10))
+_MAX_VIDEOS: int = int(CONFIG["gdrive"].get("max_videos", 1))
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
@@ -51,7 +59,7 @@ class ProductFolder:
 
 
 def _parse_folder_name(name: str) -> dict | None:
-    """Parse folder name. Returns metadata dict or None if invalid."""
+    """Parse folder name into metadata dict, or None if the name is invalid."""
     match = _FOLDER_RE.match(name)
     if not match:
         return None
@@ -71,22 +79,78 @@ def _build_drive_service():
 
 
 def _list_items(service, parent_id: str, mime_type: str | None = None) -> list[dict]:
+    """List all non-trashed items under *parent_id*, optionally filtered by MIME type."""
     query = f"'{parent_id}' in parents and trashed = false"
     if mime_type:
         query += f" and mimeType = '{mime_type}'"
-    results = []
+    results: list[dict] = []
     page_token = None
     while True:
-        resp = service.files().list(
-            q=query,
-            fields="nextPageToken, files(id, name, mimeType)",
-            pageToken=page_token,
-        ).execute()
+        resp = (
+            service.files()
+            .list(
+                q=query,
+                fields="nextPageToken, files(id, name, mimeType)",
+                orderBy="name",
+                pageToken=page_token,
+            )
+            .execute()
+        )
         results.extend(resp.get("files", []))
         page_token = resp.get("nextPageToken")
         if not page_token:
             break
     return results
+
+
+def _resolve_root_folder_id(service) -> str:
+    """Return the Drive folder ID to scan for product subfolders.
+
+    Uses GDRIVE_FOLDER_ID when set; otherwise searches My Drive by
+    GDRIVE_FOLDER_NAME and returns the first matching folder ID.
+    Raises RuntimeError if the folder cannot be found.
+    """
+    folder_id: str = CONFIG["gdrive"]["folder_id"]
+    if folder_id:
+        return folder_id
+
+    folder_name: str = CONFIG["gdrive"].get("folder_name", "")
+    if not folder_name:
+        raise RuntimeError(
+            "Neither GDRIVE_FOLDER_ID nor GDRIVE_FOLDER_NAME is configured."
+        )
+
+    logger.info("Searching Drive for folder named '%s'", folder_name)
+    # Escape single quotes in the name for the query
+    safe_name = folder_name.replace("'", "\\'")
+    resp = (
+        service.files()
+        .list(
+            q=(
+                f"name = '{safe_name}'"
+                " and mimeType = 'application/vnd.google-apps.folder'"
+                " and trashed = false"
+            ),
+            fields="files(id, name)",
+            pageSize=5,
+        )
+        .execute()
+    )
+    matches = resp.get("files", [])
+    if not matches:
+        raise RuntimeError(
+            f"Google Drive folder '{folder_name}' not found. "
+            "Make sure it is shared with the service account."
+        )
+    if len(matches) > 1:
+        logger.warning(
+            "Multiple Drive folders named '%s' found — using the first one (id=%s)",
+            folder_name,
+            matches[0]["id"],
+        )
+    folder_id = matches[0]["id"]
+    logger.info("Resolved '%s' → folder id=%s", folder_name, folder_id)
+    return folder_id
 
 
 def _download_file(service, file_id: str, dest_path: Path) -> None:
@@ -101,21 +165,33 @@ def _download_file(service, file_id: str, dest_path: Path) -> None:
 
 
 def fetch_new_products() -> list[ProductFolder]:
-    """
-    Scan the configured Google Drive folder, download new product media,
+    """Scan the configured Google Drive folder, download new product media,
     and return a list of ProductFolder objects ready for AI processing.
-    """
-    folder_id = CONFIG["gdrive"]["folder_id"]
-    download_base = Path(CONFIG["gdrive"]["download_dir"])
 
-    if not folder_id:
-        logger.warning("GDRIVE_FOLDER_ID not configured — skipping media fetch")
+    Each product folder yields at most *max_images* images and *max_videos*
+    videos (configurable via config.yaml / env vars).
+    """
+    gdrive_cfg = CONFIG["gdrive"]
+    download_base = Path(gdrive_cfg["download_dir"])
+
+    if not gdrive_cfg.get("folder_id") and not gdrive_cfg.get("folder_name"):
+        logger.warning(
+            "Neither GDRIVE_FOLDER_ID nor GDRIVE_FOLDER_NAME configured — skipping"
+        )
         return []
 
     service = _build_drive_service()
+
+    try:
+        root_id = _resolve_root_folder_id(service)
+    except RuntimeError as exc:
+        logger.error("%s", exc)
+        return []
+
     folders = _list_items(
-        service, folder_id, mime_type="application/vnd.google-apps.folder"
+        service, root_id, mime_type="application/vnd.google-apps.folder"
     )
+    logger.info("Found %d subfolder(s) in root Drive folder", len(folders))
 
     new_products: list[ProductFolder] = []
 
@@ -130,29 +206,51 @@ def fetch_new_products() -> list[ProductFolder]:
             logger.debug("Already processed: %s", name)
             continue
 
-        logger.info("Processing new product folder: %s", name)
-        product = ProductFolder(
-            folder_id=folder["id"],
-            folder_name=name,
-            **meta,
-        )
+        logger.info("New product folder detected: %s", name)
+        product = ProductFolder(folder_id=folder["id"], folder_name=name, **meta)
 
         dest_dir = download_base / name
-        files = _list_items(service, folder["id"])
+        files = _list_items(service, folder["id"])  # already ordered by name
+
+        image_count = 0
+        video_count = 0
 
         for f in files:
             ext = Path(f["name"]).suffix.lstrip(".").lower()
+            is_image = ext in _SUPPORTED_IMAGES
+            is_video = ext in _SUPPORTED_VIDEOS
+
+            if not is_image and not is_video:
+                logger.debug("Ignoring unsupported file: %s", f["name"])
+                continue
+
+            if is_image and image_count >= _MAX_IMAGES:
+                logger.debug("Image limit (%d) reached — skipping %s", _MAX_IMAGES, f["name"])
+                continue
+            if is_video and video_count >= _MAX_VIDEOS:
+                logger.debug("Video limit (%d) reached — skipping %s", _MAX_VIDEOS, f["name"])
+                continue
+
             dest = dest_dir / f["name"]
             try:
                 _download_file(service, f["id"], dest)
-                if ext in _SUPPORTED_IMAGES:
-                    product.images.append(dest)
-                elif ext in _SUPPORTED_VIDEOS:
-                    product.videos.append(dest)
             except Exception as exc:
                 log_error(name, f"Download failed for {f['name']}: {exc}")
+                continue
 
-        # Persist initial metadata to state
+            if is_image:
+                product.images.append(dest)
+                image_count += 1
+            else:
+                product.videos.append(dest)
+                video_count += 1
+
+        logger.info(
+            "Downloaded %d image(s) and %d video(s) for %s",
+            image_count, video_count, name,
+        )
+
+        # Persist initial metadata to state before AI processing
         upsert_product(name, {
             "folder": name,
             "date": f"{meta['date_str'][:4]}-{meta['date_str'][4:6]}-{meta['date_str'][6:]}",
