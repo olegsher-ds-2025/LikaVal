@@ -973,3 +973,41 @@ main { flex: 1; }
 @media (max-width: 480px) {
   .catalog-grid { grid-template-columns: repeat(2, 1fr); gap: var(--sp-40); }
 }
+
+/* ── Clay Philosophy Block ──────────────────────────────────────────────── */
+
+.clay-philosophy {
+  background: #faf7f4;
+  border-left: 4px solid #c8a97e;
+  border-radius: 0 6px 6px 0;
+  padding: var(--sp-50) var(--sp-60);
+  margin: var(--sp-60) 0;
+  max-width: 760px;
+}
+.clay-philosophy p {
+  margin: 0 0 1rem;
+  font-size: var(--fs-large);
+  line-height: 1.7;
+  color: #3b3b3b;
+}
+.clay-philosophy p:last-child { margin-bottom: 0; }
+.clay-philosophy__opener {
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl) !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #222 !important;
+  margin-bottom: 1.25rem !important;
+}
+.clay-philosophy__closing {
+  font-style: italic;
+  font-weight: 500;
+  color: #5a4a3a !important;
+  margin-top: 0.5rem !important;
+}
+
+@media (max-width: 600px) {
+  .clay-philosophy { padding: var(--sp-40); margin: var(--sp-50) 0; }
+  .clay-philosophy p { font-size: var(--fs-med); }
+  .clay-philosophy__opener { font-size: var(--fs-large) !important; }
+}
