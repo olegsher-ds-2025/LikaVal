@@ -2,22 +2,40 @@
 # Override any value via environment variable or .env file.
 
 ollama:
-  host: "${OLLAMA_HOST:http://localhost:11434}"
-  model: "${OLLAMA_MODEL:llava}"
-  timeout: 120  # seconds
+  host: "${OLLAMA_HOST:http://10.0.0.20:11434}"
+  model: "${OLLAMA_MODEL:llava-phi3}"
+  text_model: "${OLLAMA_TEXT_MODEL:qwen2.5:7b-instruct-q4_K_M}"  # text-only model for translation/cleanup
+  timeout: 180  # seconds — vision inference is slower
+  text_timeout: 300  # seconds — text-only calls; qwen2.5 needs ~2min to load + generate
+  vision_frames: 3   # frames to extract from video for analysis
   prompts:
-    title: "You are a product copywriter for a handmade ceramics brand. Given the image, write a short, evocative product title (max 10 words). Respond with the title only."
-    description: "Write a 2-3 sentence product description for this handmade ceramic piece. Focus on form, texture, and craftsmanship. Be warm and human."
-    seo_tags: "List 10 SEO tags for this ceramic product, comma-separated, lowercase."
-    social_caption: "Write an engaging Instagram/Facebook caption for this handmade ceramic piece. Include 3-5 relevant hashtags."
-    etsy_listing: "Write an Etsy product listing for this handmade ceramic. Include: title, description (150-200 words), materials, and 13 tags."
+    summary_en: >
+      You are a copywriter for a handmade ceramics brand.
+      Look at this ceramic product image and write a SHORT product summary in ENGLISH.
+      Include: 1 catchy title (max 8 words) and 2 sentences describing the piece
+      (shape, glaze, feel, use). Be warm, poetic, and specific.
+      Format your response exactly as:
+      TITLE: <title>
+      DESCRIPTION: <description>
+    translate_ru: "Переведи на русский язык:\nНАЗВАНИЕ: {title}\nОПИСАНИЕ: {description}\n\nОтвет строго в формате:\nНАЗВАНИЕ: ...\nОПИСАНИЕ: ..."
+    seo_tags: >
+      Generate exactly 10 SEO tags for a handmade ceramic product described as:
+      {description}
+      Output ONLY a comma-separated list of lowercase tags. No numbers, no bullets, no explanation.
+    etsy_listing: >
+      Write a complete Etsy product listing for this handmade ceramic piece.
+      Include: Title, Description (150-200 words), Materials, 13 tags.
+      Be warm, artisan, and specific.
 
 gdrive:
-  folder_id: "${GDRIVE_FOLDER_ID:}"
+  folder_id: "${GDRIVE_FOLDER_ID:}"        # takes priority over folder_name if set
+  folder_name: "${GDRIVE_FOLDER_NAME:Lika_ETSY}"  # looked up by name when folder_id is empty
   credentials_file: "${GDRIVE_CREDENTIALS_FILE:config/gdrive_credentials.json}"
   download_dir: "backend/downloads"
   supported_image_formats: [jpg, jpeg, png, webp]
   supported_video_formats: [mp4, mov]
+  max_images: 10   # maximum images to download per product folder
+  max_videos: 1    # maximum videos to download per product folder
 
 currency:
   ils_to_usd_ratio: "${ILS_TO_USD_RATIO:0.80}"
