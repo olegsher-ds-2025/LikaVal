@@ -32,11 +32,11 @@ class GitHubConnector(BaseConnector):
         return True
 
     def _render_product_page(self, folder: str, product: dict) -> None:
-        """Write a static HTML page for the product in EN and RU."""
+        """Write an Etsy-style static HTML page for the product in EN and RU."""
         ai = product.get("ai", {})
         images = product.get("images", [])
 
-        # Copy media assets first
+        # Copy media assets
         asset_dir = self._frontend_dir / "assets" / "products" / folder
         asset_dir.mkdir(parents=True, exist_ok=True)
         for img_path in images:
@@ -44,33 +44,79 @@ class GitHubConnector(BaseConnector):
             if src.exists():
                 shutil.copy2(src, asset_dir / src.name)
 
-        img_tags = "\n".join(
-            f'<img src="/assets/products/{folder}/{Path(img).name}" '
-            f'alt="{ai.get("title_en", folder)}" loading="lazy">'
-            for img in images
-        )
-        tags_html = " ".join(
-            f'<span class="tag">{t}</span>' for t in ai.get("seo_tags", [])
-        )
+        # Build thumbnail + main image HTML
+        def gallery_html(folder_name, imgs):
+            if not imgs:
+                return '<div class="gallery-main"><div style="aspect-ratio:1;background:#f5f2ef"></div></div>'
+            first = Path(imgs[0]).name
+            main = (
+                f'<div class="gallery-main">'
+                f'<img id="gallery-active" src="/assets/products/{folder_name}/{first}" alt="product">'
+                f'</div>'
+            )
+            thumbs = "\n".join(
+                f'<button class="gallery-thumb{" active" if i == 0 else ""}" '
+                f'data-src="/assets/products/{folder_name}/{Path(img).name}">'
+                f'<img src="/assets/products/{folder_name}/{Path(img).name}" alt="view {i+1}">'
+                f'</button>'
+                for i, img in enumerate(imgs)
+            )
+            return f'{main}\n<div class="gallery-thumbs">{thumbs}</div>'
 
         for lang in ("en", "ru"):
-            title_key = f"title_{lang}"
-            desc_key = f"description_{lang}"
-            title = ai.get(title_key) or ai.get("title_en", folder)
-            description = ai.get(desc_key) or ai.get("description_en", "")
-            sold_badge = (
-                '<span class="badge sold">Sold</span>'
-                if product.get("status") == "sold"
+            title = ai.get(f"title_{lang}") or ai.get("title_en", folder)
+            description = ai.get(f"description_{lang}") or ai.get("description_en", "")
+            is_sold = product.get("status") == "sold"
+            price = product.get("price_usd", "")
+            tags = ai.get("seo_tags", [])
+            keywords = ", ".join(tags)
+
+            # Labels
+            if lang == "en":
+                site_name     = "LikaVal Ceramics"
+                catalog_label = "Catalog"
+                craft_note    = "Handmade · One of a kind"
+                highlight_1   = ("🏺", "Handmade", "Shaped and glazed by hand")
+                highlight_2   = ("📦", "Ships from Israel", "Worldwide shipping available")
+                highlight_3   = ("✨", "One of a kind", "Each piece is unique")
+                desc_label    = "About this piece"
+                tags_label    = "Tags"
+                btn_available = "Contact to Purchase"
+                btn_sold      = "Sold — View similar pieces"
+                btn_sold_href = f"/{lang}/catalog.html"
+            else:
+                site_name     = "LikaVal Керамика"
+                catalog_label = "Каталог"
+                craft_note    = "Ручная работа · Единственный экземпляр"
+                highlight_1   = ("🏺", "Ручная работа", "Лепка и обжиг вручную")
+                highlight_2   = ("📦", "Отправка из Израиля", "Доставка по всему миру")
+                highlight_3   = ("✨", "Единственный экземпляр", "Каждое изделие уникально")
+                desc_label    = "Об изделии"
+                tags_label    = "Теги"
+                btn_available = "Написать для покупки"
+                btn_sold      = "Продано — Смотреть похожие"
+                btn_sold_href = f"/{lang}/catalog.html"
+
+            active_en  = ' class="active"' if lang == "en" else ""
+            active_ru  = ' class="active"' if lang == "ru" else ""
+            badge_html = (
+                '<span class="badge sold">Sold</span>' if is_sold
                 else '<span class="badge available">Available</span>'
             )
-            price_label = "Price" if lang == "en" else "Цена"
-            back_label = "← Catalog" if lang == "en" else "← Каталог"
-            back_href = f"/{lang}/catalog.html"
-            site_name = "LikaVal Ceramics" if lang == "en" else "LikaVal Керамика"
-
-            active_en = 'class="active"' if lang == "en" else ""
-            active_ru = 'class="active"' if lang == "ru" else ""
-            keywords = ", ".join(ai.get("seo_tags", []))
+            action_html = (
+                f'<a href="{btn_sold_href}" class="btn-primary disabled">{btn_sold}</a>'
+                if is_sold else
+                '<a href="mailto:info@likaval.com" class="btn-primary">'
+                f'{btn_available}</a>\n'
+                '<a href="https://www.etsy.com/shop/LikaVal" class="btn-secondary" '
+                'target="_blank" rel="noopener">View on Etsy</a>'
+            )
+            tags_html = "".join(
+                f'<span class="product-tag">{t}</span>' for t in tags
+            )
+            hicon1, hstrong1, hp1 = highlight_1
+            hicon2, hstrong2, hp2 = highlight_2
+            hicon3, hstrong3, hp3 = highlight_3
 
             html = f"""<!DOCTYPE html>
 <html lang="{lang}">
@@ -80,28 +126,114 @@ class GitHubConnector(BaseConnector):
   <title>{title} — {site_name}</title>
   <meta name="description" content="{description[:160]}">
   <meta name="keywords" content="{keywords}">
+  <meta property="og:title" content="{title}">
+  <meta property="og:description" content="{description[:160]}">
+  <meta property="og:image" content="/assets/products/{folder}/{Path(images[0]).name if images else ''}">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
   <header class="site-header">
     <a href="/{lang}/" class="site-title">{site_name}</a>
-    <nav class="site-nav"><a href="/{lang}/catalog.html">{back_label}</a></nav>
+    <nav class="site-nav">
+      <a href="/{lang}/catalog.html">{catalog_label}</a>
+    </nav>
     <div class="lang-switcher">
-      <a href="/en/products/{folder}.html" {active_en}>EN</a>
-      <a href="/ru/products/{folder}.html" {active_ru}>RU</a>
+      <a href="/en/products/{folder}.html"{active_en}>EN</a>
+      <a href="/ru/products/{folder}.html"{active_ru}>RU</a>
     </div>
   </header>
-  <main class="product-page">
-    <div class="product-images">{img_tags}</div>
-    <div class="product-info">
-      <h1>{title}</h1>
-      {sold_badge}
-      <p class="price">{price_label}: ${product.get("price_usd", "")}</p>
-      <p class="description">{description}</p>
-      <div class="tags">{tags_html}</div>
-    </div>
+
+  <nav class="breadcrumb" aria-label="breadcrumb">
+    <a href="/{lang}/">{site_name}</a>
+    <span class="sep">/</span>
+    <a href="/{lang}/catalog.html">{catalog_label}</a>
+    <span class="sep">/</span>
+    <span class="current">{title}</span>
+  </nav>
+
+  <main class="product-layout">
+    <div class="product-cols">
+
+      <!-- ── Image gallery ── -->
+      <div class="product-gallery" role="region" aria-label="Product images">
+        {gallery_html(folder, images)}
+      </div>
+
+      <!-- ── Info panel ── -->
+      <div class="product-panel">
+        <a href="/{lang}/" class="product-shop-name">{site_name}</a>
+
+        <h1 class="product-title">{title}</h1>
+
+        <div class="product-craft">
+          <span class="product-stars" aria-hidden="true">★★★★★</span>
+          <span>{craft_note}</span>
+        </div>
+
+        <div class="product-price-row">
+          <div class="product-price">
+            <span class="currency">$</span>{price}
+          </div>
+          {badge_html}
+        </div>
+
+        <div class="product-actions">
+          {action_html}
+        </div>
+
+        <div class="product-highlights">
+          <div class="highlight-row">
+            <span class="highlight-icon" aria-hidden="true">{hicon1}</span>
+            <div><strong>{hstrong1}</strong><p>{hp1}</p></div>
+          </div>
+          <div class="highlight-row">
+            <span class="highlight-icon" aria-hidden="true">{hicon2}</span>
+            <div><strong>{hstrong2}</strong><p>{hp2}</p></div>
+          </div>
+          <div class="highlight-row">
+            <span class="highlight-icon" aria-hidden="true">{hicon3}</span>
+            <div><strong>{hstrong3}</strong><p>{hp3}</p></div>
+          </div>
+        </div>
+
+        <div class="product-section">
+          <div class="product-section-title">{desc_label}</div>
+          <p class="product-description">{description}</p>
+        </div>
+
+        <div class="product-section">
+          <div class="product-section-title">{tags_label}</div>
+          <div class="product-tags-list">{tags_html}</div>
+        </div>
+
+      </div><!-- /product-panel -->
+    </div><!-- /product-cols -->
   </main>
-  <footer class="site-footer"><p>&copy; {site_name}</p></footer>
+
+  <footer class="site-footer">
+    <div class="footer-inner content-wide">
+      <div class="footer-brand">
+        <a href="/{lang}/" class="site-title">{site_name}</a>
+        <p>Handmade ceramics studio based in Petah Tikva, Israel.</p>
+      </div>
+      <nav class="footer-nav">
+        <h3>{catalog_label}</h3>
+        <ul><li><a href="/{lang}/catalog.html">{catalog_label}</a></li></ul>
+      </nav>
+    </div>
+    <p class="footer-bottom">&copy; {site_name}</p>
+  </footer>
+
+  <script>
+    // Thumbnail gallery switcher
+    document.querySelectorAll('.gallery-thumb').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        document.querySelectorAll('.gallery-thumb').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('gallery-active').src = btn.dataset.src;
+      }});
+    }});
+  </script>
 </body>
 </html>"""
 
