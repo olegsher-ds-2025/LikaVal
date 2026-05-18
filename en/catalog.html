@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Catalog — LikaVal Ceramics</title>
+  <title>Catalog — LikaVal Ceramics</title>
+  <meta name="description" content="Handmade ceramics studio · Petah Tikva, Israel">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
@@ -11,39 +12,110 @@
     <a href="/en/" class="site-title">LikaVal Ceramics</a>
     <nav class="site-nav">
       <a href="/en/">Home</a>
-      <a href="/en/catalog.html" class="active">Product Catalog</a>
+      <a href="/en/catalog.html" class="active">Catalog</a>
     </nav>
     <div class="lang-switcher">
       <a href="/en/catalog.html" class="active">EN</a>
-      <a href="/ru/catalog.html" >RU</a>
+      <a href="/ru/catalog.html">RU</a>
     </div>
   </header>
-  <main>
-    <h1>Product Catalog</h1>
-    <div class="product-grid">
-  <article class="product-card available">
-    <a href="/en/products/20260216_200.html">
-      <img src="/assets/products/20260216_200/IMG_7840.JPG" alt="Winged Delight Ceramic Bird Sculpture" loading="lazy">
-      <h2>Winged Delight Ceramic Bird Sculpture</h2>
-      <p class="price">$160</p>
-    </a>
-  </article>
-  <article class="product-card available">
-    <a href="/en/products/20260215_200.html">
-      <img src="/assets/products/20260215_200/IMG_7913.JPG" alt="Majestic Crane Soap Dish" loading="lazy">
-      <h2>Majestic Crane Soap Dish</h2>
-      <p class="price">$160</p>
-    </a>
-  </article>
-  <article class="product-card available">
-    <a href="/en/products/20260214_250.html">
-      <img src="/assets/products/20260214_250/IMG_7896.JPG" alt="Owl's Eye Vase" loading="lazy">
-      <h2>Owl's Eye Vase</h2>
-      <p class="price">$200</p>
-    </a>
-  </article>
+
+  <!-- Shop banner -->
+  <div class="shop-banner">
+    <div class="shop-banner__inner content-wide">
+      <div class="shop-banner__avatar" aria-hidden="true">🏺</div>
+      <div class="shop-banner__info">
+        <h1 class="shop-banner__name">LikaVal Ceramics</h1>
+        <p class="shop-banner__tagline">Handmade ceramics studio · Petah Tikva, Israel</p>
+        <div class="shop-banner__meta">
+          <span class="shop-banner__count">3 available · 3 total</span>
+          <span class="shop-banner__sep">·</span>
+          <span class="shop-banner__stars" aria-label="5 stars">★★★★★</span>
+        </div>
+        <a href="https://www.etsy.com/shop/LVSoulCeramics"
+           class="btn-outline shop-banner__etsy"
+           target="_blank" rel="noopener">View on Etsy</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="content-wide catalog-main">
+    <!-- Filter tabs -->
+    <div class="catalog-filters" role="group" aria-label="Filter">
+      <button class="catalog-filter active" data-filter="all">All</button>
+      <button class="catalog-filter" data-filter="available">Available</button>
+      <button class="catalog-filter" data-filter="sold">Sold</button>
+    </div>
+
+    <!-- Product grid -->
+    <div class="catalog-grid" id="catalog-grid">
+
+      <article class="catalog-card" data-status="available">
+        <a href="/en/products/20260216_200.html" class="catalog-card__link">
+          <div class="catalog-card__img-wrap">
+            <img src="/assets/products/20260216_200/IMG_7840.JPG" alt="Winged Delight Ceramic Bird Sculpture" loading="lazy">
+            
+          </div>
+          <div class="catalog-card__body">
+            <h2 class="catalog-card__title">Winged Delight Ceramic Bird Sculpture</h2>
+            <p class="catalog-card__price">$160</p>
+          </div>
+        </a>
+      </article>
+      <article class="catalog-card" data-status="available">
+        <a href="/en/products/20260215_200.html" class="catalog-card__link">
+          <div class="catalog-card__img-wrap">
+            <img src="/assets/products/20260215_200/IMG_7913.JPG" alt="Majestic Crane Soap Dish" loading="lazy">
+            
+          </div>
+          <div class="catalog-card__body">
+            <h2 class="catalog-card__title">Majestic Crane Soap Dish</h2>
+            <p class="catalog-card__price">$160</p>
+          </div>
+        </a>
+      </article>
+      <article class="catalog-card" data-status="available">
+        <a href="/en/products/20260214_250.html" class="catalog-card__link">
+          <div class="catalog-card__img-wrap">
+            <img src="/assets/products/20260214_250/IMG_7896.JPG" alt="Owl's Eye Vase" loading="lazy">
+            
+          </div>
+          <div class="catalog-card__body">
+            <h2 class="catalog-card__title">Owl's Eye Vase</h2>
+            <p class="catalog-card__price">$200</p>
+          </div>
+        </a>
+      </article>
     </div>
   </main>
-  <footer class="site-footer"><p>&copy; LikaVal Ceramics</p></footer>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="/en/" class="site-title">LikaVal Ceramics</a>
+        <p>Handmade ceramics studio · Petah Tikva, Israel</p>
+      </div>
+      <nav class="footer-nav">
+        <h3>Catalog</h3>
+        <ul><li><a href="/en/catalog.html">Catalog</a></li></ul>
+      </nav>
+    </div>
+    <p class="footer-bottom">&copy; LikaVal Ceramics</p>
+  </footer>
+
+  <script>
+    // Filter tabs
+    document.querySelectorAll('.catalog-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        document.querySelectorAll('.catalog-card').forEach(card => {
+          card.style.display =
+            (filter === 'all' || card.dataset.status === filter) ? '' : 'none';
+        });
+      });
+    });
+  </script>
 </body>
 </html>
