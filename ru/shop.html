@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Серебряный Мастер-Класс по Керамике | Лика Вал</title>
-  <meta name="description" content="Серебряный мастер-класс по керамике в Петах-Тикве. Два занятия, два вида глины, обжиг 900°C.">
+  <title>Магазин | Лика Вал — Авторская керамика</title>
+  <meta name="description" content="Авторская керамика ручной работы от Лики Вал. Уникальные изделия ручной лепки — купить онлайн.">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
@@ -12,58 +12,42 @@
 <header class="site-header">
   <a href="/ru/" class="site-title">Лика Вал | Керамика как искусство и медитация</a>
   <nav class="site-nav">
-    <a href="/ru/workshops.html" class="active">Моя Керамика</a>
+    <a href="/ru/workshops.html">Моя Керамика</a>
     <a href="/ru/workshops.html">Мастер-классы</a>
     <a href="/ru/kruzhok.html">Кружок керамики</a>
-    <a href="/ru/shop.html">Магазин</a>
+    <a href="/ru/shop.html" class="active">Магазин</a>
   </nav>
   <div class="lang-switcher">
-    <a href="/en/">EN</a>
-    <a href="/ru/" class="active">RU</a>
+    <a href="/en/shop.html">EN</a>
+    <a href="/ru/shop.html" class="active">RU</a>
   </div>
 </header>
 
 <main>
   <div class="content-wide">
-    <div class="workshop-detail">
 
-      <div class="workshop-detail-header">
-        <div>
-          <h1>🥈 Серебряный Мастер-Класс по Керамике</h1>
-          <p class="workshop-meta">Два вида глины · Обжиг 900°C · Петах-Тиква · От 18 лет · До 4 человек</p>
-          <p>Работа с двумя видами глины — создайте изделие с особой текстурой и неповторимым характером.</p>
-        </div>
-        <figure class="workshop-detail-image">
-          <img
-            src="../assets/images/cropped-WhatsApp-Image-2025-08-15-at-20.11.44.jpeg"
-            alt="Серебряный мастер-класс по керамике — Лика Вал">
-        </figure>
-      </div>
+    <section class="shop-header">
+      <h1>Магазин</h1>
+      <p class="shop-subtitle">Каждое изделие лепится, глазуруется и обжигается вручную — неповторимый объект, созданный жить долго.</p>
+    </section>
 
-      <h2>Программа</h2>
-      <ol class="visit-list">
-        <li>
-          <strong>Первый визит — 3 часа:</strong> работа с глиной.
-          Обычно создаётся кружка или чашка.
-          Изделие остаётся для просушивания и первого обжига (900°C).
-        </li>
-        <li>
-          <strong>Второй визит — около 1–1,5 часа:</strong> покрытие глазурью.
-          После второго обжига вы забираете готовую вещь, пригодную для использования.
-        </li>
-      </ol>
-
-      <div class="upgrade-note">
-        Добавьте ещё немного — и выберите
-        <a href="/ru/workshop-gold.html">🥇 Золотой мастер-класс</a> с премиальной глиной и обжигом 1200°C!
-      </div>
-
-      <div class="page-nav">
-        <a href="/ru/workshop-standard.html" class="btn btn-outline">← Стандартный мастер-класс</a>
-        <a href="/ru/workshop-gold.html" class="btn">Золотой мастер-класс →</a>
-      </div>
-
+    <div class="shop-filters">
+      <button class="filter-btn active" data-filter="all">Все работы</button>
+      <button class="filter-btn" data-filter="vase">Вазы</button>
+      <button class="filter-btn" data-filter="bowl">Миски</button>
+      <button class="filter-btn" data-filter="mug">Кружки</button>
+      <button class="filter-btn" data-filter="sculpture">Скульптуры</button>
     </div>
+
+    <div class="shop-grid" id="shop-grid">
+      <!-- Products will be loaded here -->
+    </div>
+
+    <div class="shop-empty" id="shop-empty">
+      <p>Скоро здесь появятся новые работы.</p>
+      <p>Чтобы узнать о наличии, напишите мне в <a href="https://wa.me/972545308681" target="_blank" rel="noopener">WhatsApp</a>.</p>
+    </div>
+
   </div>
 </main>
 
@@ -71,14 +55,17 @@
   <div class="footer-inner">
     <div class="footer-brand">
       <a href="/ru/" class="site-title">Лика Вал | Керамика как искусство и медитация</a>
+      <p>Авторская керамика ручной работы и мастер-классы в Петах-Тикве, Израиль.</p>
     </div>
     <nav class="footer-nav">
-      <h3>Мастер-классы</h3>
+      <h3>Моя керамика</h3>
       <ul>
+        <li><a href="/ru/shop.html">Магазин</a></li>
+        <li><a href="/ru/kruzhok.html">Кружок керамики для взрослых</a></li>
+        <li><a href="/ru/workshops.html">Мастер-классы в Петах-Тикве</a></li>
         <li><a href="/ru/workshop-standard.html">Мастер-класс по керамике</a></li>
         <li><a href="/ru/workshop-silver.html">Серебряный мастер-класс</a></li>
         <li><a href="/ru/workshop-gold.html">Золотой мастер-класс</a></li>
-        <li><a href="/ru/kruzhok.html">Кружок керамики для взрослых</a></li>
       </ul>
     </nav>
   </div>
@@ -95,5 +82,6 @@
   <p class="footer-bottom">&copy; Лика Вал · <a href="mailto:info@likaval.com" style="color:inherit">info@likaval.com</a></p>
 </footer>
 
+<script src="/assets/js/shop.js"></script>
 </body>
 </html>
