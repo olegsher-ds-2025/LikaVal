@@ -36,3 +36,5 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+frontend/assets/products/**/*.MOV
+frontend/assets/products/**/*.mov
