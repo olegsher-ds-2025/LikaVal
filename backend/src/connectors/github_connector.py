@@ -28,6 +28,7 @@ class GitHubConnector(BaseConnector):
         """Render the product page and push to GitHub Pages."""
         self._render_product_page(folder, product)
         self._update_catalog_page()
+        self._update_ru_homepage()
         self._git_push()
         return True
 
@@ -108,7 +109,7 @@ class GitHubConnector(BaseConnector):
                 if is_sold else
                 '<a href="mailto:info@likaval.com" class="btn-primary">'
                 f'{btn_available}</a>\n'
-                '<a href="https://www.etsy.com/shop/LikaVal" class="btn-secondary" '
+                '<a href="https://www.etsy.com/shop/LVSoulCeramics" class="btn-secondary" '
                 'target="_blank" rel="noopener">View on Etsy</a>'
             )
             tags_html = "".join(
@@ -243,46 +244,80 @@ class GitHubConnector(BaseConnector):
             logger.info("Rendered %s product page: %s/%s", lang.upper(), lang, folder)
 
     def _update_catalog_page(self) -> None:
-        """Regenerate catalog index pages for EN and RU."""
+        """Regenerate Etsy-style catalog/shop pages for EN and RU."""
         from backend.src.state_manager import load_products
 
         products = load_products()
+        total = len(products)
+        available = sum(1 for p in products.values() if p.get("status") != "sold")
 
         for lang in ("en", "ru"):
-            title_key = f"title_{lang}"
-            catalog_title = "Product Catalog" if lang == "en" else "Каталог товаров"
-            site_name = "LikaVal Ceramics" if lang == "en" else "LikaVal Керамика"
-            home_label = "Home" if lang == "en" else "Главная"
+            title_key  = f"title_{lang}"
+            active_en  = ' class="active"' if lang == "en" else ""
+            active_ru  = ' class="active"' if lang == "ru" else ""
 
-            items_html = ""
+            if lang == "en":
+                site_name      = "LikaVal Ceramics"
+                shop_tagline   = "Handmade ceramics studio · Petah Tikva, Israel"
+                catalog_label  = "Catalog"
+                home_label     = "Home"
+                etsy_label     = "View on Etsy"
+                filter_all     = "All"
+                filter_avail   = "Available"
+                filter_sold    = "Sold"
+                count_label    = f"{available} available · {total} total"
+                price_prefix   = "$"
+                sold_label     = "Sold"
+            else:
+                site_name      = "LikaVal Керамика"
+                shop_tagline   = "Авторская керамика ручной работы · Петах-Тиква, Израиль"
+                catalog_label  = "Каталог"
+                home_label     = "Главная"
+                etsy_label     = "Смотреть на Etsy"
+                filter_all     = "Все"
+                filter_avail   = "Доступно"
+                filter_sold    = "Продано"
+                count_label    = f"{available} доступно · {total} изделий"
+                price_prefix   = "$"
+                sold_label     = "Продано"
+
+            cards_html = ""
             for f_name, p in sorted(products.items(), reverse=True):
-                ai = p.get("ai", {})
-                title = ai.get(title_key) or ai.get("title_en", f_name)
-                status_cls = "sold" if p.get("status") == "sold" else "available"
-                images = p.get("images", [])
-                thumb = (
+                ai      = p.get("ai", {})
+                title   = ai.get(title_key) or ai.get("title_en", f_name)
+                status  = p.get("status", "available")
+                is_sold = status == "sold"
+                images  = p.get("images", [])
+                price   = p.get("price_usd", "")
+                thumb   = (
                     f'<img src="/assets/products/{f_name}/{Path(images[0]).name}" '
                     f'alt="{title}" loading="lazy">'
-                    if images else '<div class="no-image"></div>'
+                    if images else '<div class="catalog-card__no-image"></div>'
                 )
-                items_html += f"""
-  <article class="product-card {status_cls}">
-    <a href="/{lang}/products/{f_name}.html">
-      {thumb}
-      <h2>{title}</h2>
-      <p class="price">${p.get("price_usd", "")}</p>
-    </a>
-  </article>"""
+                sold_ribbon = f'<span class="catalog-card__sold-ribbon">{sold_label}</span>' if is_sold else ""
+                data_status = "sold" if is_sold else "available"
 
-            active_en = 'class="active"' if lang == "en" else ""
-            active_ru = 'class="active"' if lang == "ru" else ""
+                cards_html += f"""
+      <article class="catalog-card" data-status="{data_status}">
+        <a href="/{lang}/products/{f_name}.html" class="catalog-card__link">
+          <div class="catalog-card__img-wrap">
+            {thumb}
+            {sold_ribbon}
+          </div>
+          <div class="catalog-card__body">
+            <h2 class="catalog-card__title">{title}</h2>
+            <p class="catalog-card__price">{price_prefix}{price}</p>
+          </div>
+        </a>
+      </article>"""
 
             catalog_html = f"""<!DOCTYPE html>
 <html lang="{lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{catalog_title} — {site_name}</title>
+  <title>{catalog_label} — {site_name}</title>
+  <meta name="description" content="{shop_tagline}">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
@@ -290,19 +325,75 @@ class GitHubConnector(BaseConnector):
     <a href="/{lang}/" class="site-title">{site_name}</a>
     <nav class="site-nav">
       <a href="/{lang}/">{home_label}</a>
-      <a href="/{lang}/catalog.html" class="active">{catalog_title}</a>
+      <a href="/{lang}/catalog.html" class="active">{catalog_label}</a>
     </nav>
     <div class="lang-switcher">
-      <a href="/en/catalog.html" {active_en}>EN</a>
-      <a href="/ru/catalog.html" {active_ru}>RU</a>
+      <a href="/en/catalog.html"{active_en}>EN</a>
+      <a href="/ru/catalog.html"{active_ru}>RU</a>
     </div>
   </header>
-  <main>
-    <h1>{catalog_title}</h1>
-    <div class="product-grid">{items_html}
+
+  <!-- Shop banner -->
+  <div class="shop-banner">
+    <div class="shop-banner__inner content-wide">
+      <div class="shop-banner__avatar" aria-hidden="true">🏺</div>
+      <div class="shop-banner__info">
+        <h1 class="shop-banner__name">{site_name}</h1>
+        <p class="shop-banner__tagline">{shop_tagline}</p>
+        <div class="shop-banner__meta">
+          <span class="shop-banner__count">{count_label}</span>
+          <span class="shop-banner__sep">·</span>
+          <span class="shop-banner__stars" aria-label="5 stars">★★★★★</span>
+        </div>
+        <a href="https://www.etsy.com/shop/LVSoulCeramics"
+           class="btn-outline shop-banner__etsy"
+           target="_blank" rel="noopener">{etsy_label}</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="content-wide catalog-main">
+    <!-- Filter tabs -->
+    <div class="catalog-filters" role="group" aria-label="Filter">
+      <button class="catalog-filter active" data-filter="all">{filter_all}</button>
+      <button class="catalog-filter" data-filter="available">{filter_avail}</button>
+      <button class="catalog-filter" data-filter="sold">{filter_sold}</button>
+    </div>
+
+    <!-- Product grid -->
+    <div class="catalog-grid" id="catalog-grid">
+{cards_html}
     </div>
   </main>
-  <footer class="site-footer"><p>&copy; {site_name}</p></footer>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="/{lang}/" class="site-title">{site_name}</a>
+        <p>{shop_tagline}</p>
+      </div>
+      <nav class="footer-nav">
+        <h3>{catalog_label}</h3>
+        <ul><li><a href="/{lang}/catalog.html">{catalog_label}</a></li></ul>
+      </nav>
+    </div>
+    <p class="footer-bottom">&copy; {site_name}</p>
+  </footer>
+
+  <script>
+    // Filter tabs
+    document.querySelectorAll('.catalog-filter').forEach(btn => {{
+      btn.addEventListener('click', () => {{
+        document.querySelectorAll('.catalog-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const filter = btn.dataset.filter;
+        document.querySelectorAll('.catalog-card').forEach(card => {{
+          card.style.display =
+            (filter === 'all' || card.dataset.status === filter) ? '' : 'none';
+        }});
+      }});
+    }});
+  </script>
 </body>
 </html>"""
 
@@ -310,6 +401,64 @@ class GitHubConnector(BaseConnector):
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(catalog_html, encoding="utf-8")
             logger.info("Updated %s catalog page", lang.upper())
+
+    def _update_ru_homepage(self) -> None:
+        """Inject the 3 latest products into the RU homepage latest-works section."""
+        from backend.src.state_manager import load_products
+        import re as _re
+
+        products = load_products()
+        latest = sorted(products.items(), reverse=True)[:3]
+
+        cards_html = ""
+        for f_name, p in latest:
+            ai     = p.get("ai", {})
+            title  = ai.get("title_ru") or ai.get("title_en", f_name)
+            images = p.get("images", [])
+            price  = p.get("price_usd", "")
+            is_sold = p.get("status") == "sold"
+            thumb  = (
+                f'<img src="/assets/products/{f_name}/{Path(images[0]).name}" '
+                f'alt="{title}" loading="lazy">'
+                if images else '<div class="catalog-card__no-image"></div>'
+            )
+            sold_ribbon = '<span class="catalog-card__sold-ribbon">Продано</span>' if is_sold else ""
+            data_status = "sold" if is_sold else "available"
+
+            cards_html += f"""
+        <article class="catalog-card" data-status="{data_status}">
+          <a href="/ru/products/{f_name}.html" class="catalog-card__link">
+            <div class="catalog-card__img-wrap">
+              {thumb}
+              {sold_ribbon}
+            </div>
+            <div class="catalog-card__body">
+              <h3 class="catalog-card__title">{title}</h3>
+              <p class="catalog-card__price">${price}</p>
+            </div>
+          </a>
+        </article>"""
+
+        homepage = self._frontend_dir / "ru" / "index.html"
+        if not homepage.exists():
+            logger.warning("RU homepage not found, skipping latest-works update")
+            return
+
+        html = homepage.read_text(encoding="utf-8")
+        # Replace content between the sentinel comments / inside #latest-products div
+        new_block = (
+            '<div class="catalog-grid" id="latest-products">'
+            + cards_html
+            + "\n      </div>"
+        )
+        html = _re.sub(
+            r'<div class="catalog-grid" id="latest-products">.*?</div>',
+            new_block,
+            html,
+            flags=_re.DOTALL,
+        )
+        homepage.write_text(html, encoding="utf-8")
+        logger.info("Updated RU homepage with %d latest products", len(latest))
 
     def _git_push(self) -> None:
         """Commit all frontend changes on main, then deploy to gh-pages via worktree.

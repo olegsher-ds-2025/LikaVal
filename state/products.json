@@ -188,5 +188,146 @@
     },
     "created_at": "2026-05-19T16:45:59.249429+00:00",
     "updated_at": "2026-05-19T16:45:59.249429+00:00"
+  },
+  "20260519_150": {
+    "folder": "20260519_150",
+    "date": "2026-05-19",
+    "price_ils": 150,
+    "price_usd": 120,
+    "status": "available",
+    "images": [
+      "backend/downloads/20260519_150/IMG_0869.JPG",
+      "backend/downloads/20260519_150/IMG_0872.JPG",
+      "backend/downloads/20260519_150/IMG_0873.JPG",
+      "backend/downloads/20260519_150/IMG_0874.JPG",
+      "backend/downloads/20260519_150/IMG_0875.JPG",
+      "backend/downloads/20260519_150/IMG_0880.JPG",
+      "backend/downloads/20260519_150/IMG_0881.JPG",
+      "backend/downloads/20260519_150/IMG_0882.JPG",
+      "backend/downloads/20260519_150/IMG_0892.JPG",
+      "backend/downloads/20260519_150/IMG_0893.JPG"
+    ],
+    "videos": [
+      "backend/downloads/20260519_150/IMG_0885.MOV"
+    ],
+    "ai": {
+      "title_en": "A Bowl of Bones",
+      "description_en": "This unique ceramic bowl is shaped like a bone with green leaves on top, giving it an intriguing and whimsical touch. The beige glaze adds to the earthy feel of this piece, making it perfect for holding small objects or serving as a decorative centerpiece.",
+      "title_ru": "Кубок из костей",
+      "description_ru": "Это уникальный керамический кубок, сделанный в виде кости с зелеными листьями на верхушке, что делает его интригующим и прикольно-фантастичным. Бежевый лак заполняет эту вещь земляной атмосферой, делая ее идеальной для хранения маленьких предметов или использования в качестве декоративного центровочного предмета.",
+      "seo_tags": [
+        "handmadeceramicbowl",
+        "uniquebonebowl",
+        "greenleafdecor",
+        "whimsicaltouch",
+        "beigeglaze",
+        "earthyfeel",
+        "smallobjectholder",
+        "decorativecenterpiece",
+        "intriguingdesign",
+        "ceramicartwork"
+      ],
+      "etsy_listing": "Title: Co Bones Plate - A Unique Handcrafted Ceramic Piece\n\nDescription: Introducing the Co Bones plate, a one-of-a-kind handmade ceramic piece that combines functionality with style. The plate features a charming tree design adorned with vibrant green leaves and delicate yellow fruit, adding an artistic touch to any dining experience. Crafted from high-quality clay, this Co Bones plate is both durable and aesthetically pleasing.\n\nThe tree depicted on the plate represents growth and resilience, making it not only a beautiful addition to your tableware collection but also a thoughtful gift for those who appreciate nature's beauty. The hand-painted design showcases the artist's attention to detail and skill in creating unique pieces that stand out from mass-produced alternatives.\n\nThis Co Bones plate is perfect for serving small appetizers or desserts, adding a touch of elegance to any gathering. Whether you choose it as a personal decoration or gift, this handcrafted ceramic piece will surely impress and inspire conversation among your guests.\n\nMaterials: The Co Bones plate is made from high-quality clay that has been fired and glazed for durability and a smooth finish.\n\nTags: Handmade Ceramic, Tree Design, Fruit Leaves, Dinnerware, Eco-Friendly, Artisan Craftsmanship, Unique Gifts, Home Decor, Sustainable Materials, Fine Pottery, Aesthetic Appeal.",
+      "social_post_ru": "\"ПРИВЕТ ВСЕМ🦊\nНу, чё ж, пришло время поделиться с вами одним из своих уникальных творений!🔥\nКубок из костей - это что-то вроде тайной фантастической сказки, которую я запечатал на вечные времена глиной и огнём.\nВиднеются листья зеленые на вершине, как будто кубок вырос прямо из земли🌱… А невероятно-бежевый лак придает ему уютную атмосферу земли.\nОн идеальен для хранения маленьких предметов, или как декоративный центровочный объект - в любом случае он будет добавлять вам неповторимый уют!🙌🏼\nИзготовление этот занимало много времени и сил, поэтому его цена не слишком низкая, но я гарантирую, что он стоит больше цены.😉\nЕсли кто-то заинтересовался - пишите мне, доступен для заказа!💌\"\nХэштеги: #керамика #искусство #уникальноетворение #петахтиквой #декоративныйобъект"
+    },
+    "published": {
+      "github": false,
+      "etsy": false,
+      "facebook": false
+    },
+    "updated_at": "2026-06-01T11:33:56.851554+00:00"
+  },
+  "20260520_280": {
+    "folder": "20260520_280",
+    "date": "2026-05-20",
+    "price_ils": 280,
+    "price_usd": 224,
+    "status": "available",
+    "images": [
+      "backend/downloads/20260520_280/IMG_0852.JPG",
+      "backend/downloads/20260520_280/IMG_0853.JPG",
+      "backend/downloads/20260520_280/IMG_0854.JPG",
+      "backend/downloads/20260520_280/IMG_0855.JPG",
+      "backend/downloads/20260520_280/IMG_0860.JPG",
+      "backend/downloads/20260520_280/IMG_0861.JPG",
+      "backend/downloads/20260520_280/IMG_0863.JPG",
+      "backend/downloads/20260520_280/IMG_0866.JPG",
+      "backend/downloads/20260520_280/IMG_0867.JPG",
+      "backend/downloads/20260520_280/IMG_0868.JPG"
+    ],
+    "videos": [],
+    "ai": {
+      "title_en": "Flowered Tea Mug",
+      "description_en": "The hand-painted tea mug features a charming floral design in hues of brown and gold, with delicate leaves and petals adding texture to the surface. This earthy teacup is perfect for enjoying your favorite beverage while admiring its intricate details.",
+      "title_ru": "Кружка с рисунком цветов",
+      "description_ru": "Эта кружка с ручной росписью представляет собой очаровательный цветочный дизайн в тонах коричневого и золота, с деликатными листьями и лепестками, которые добавляют текстуру поверхности. Эта земляная чашка совершенно подходит для наслаждения своим любимым напитком, в то время как вы замечаете ее интригующие детали.",
+      "seo_tags": [
+        "handmade",
+        "ceramic",
+        "tea",
+        "mug",
+        "floral",
+        "brown",
+        "gold",
+        "earthy",
+        "detailed",
+        "handpainted"
+      ],
+      "etsy_listing": "Title: Handcrafted Brown Ceramic Mug with Floral Design & Orange Birds\n\nDescription: This is a handmade ceramic mug that exudes an earthy charm with its rich brown color. The intricate floral design on the mug showcases the artisan's attention to detail, while the orange birds bring a pop of vibrant color and life to the piece. Each element in this mug tells a story, making it more than just a simple drinkware item.\n\nThe mug is made from high-quality clay material, which ensures its durability and long-lasting use. The floral design features various flowers and leaves that are realistically rendered to create an appealing visual effect. The orange birds on the side of the mug appear dynamic and lively, adding a unique touch to the piece.\n\nThe mug's handle is ergonomically designed for easy gripping, making it comfortable to hold while drinking your favorite beverage. Whether you use it for coffee or tea, this handcrafted ceramic mug will make a beautiful addition to any kitchen or home decor.\n\nMaterials: High-quality clay material\nDesign: Floral and orange bird motifs\nHandle: Ergonomically designed for easy gripping\n\nTag categories: Crafts, Home Decor, Drinkware, Handmade, Ceramics, Gifts, Kitchen Accessories, Artisan, Pottery, Floral Design, Bird Motif",
+      "social_post_ru": "\"ПРИВЕТ ВСЕМ🦊\nНу и что за чашка та тая! 🌸\nОна совершенно удивила меня, как будто прилетела сказочной страны 🏹\nЭта кружка с ручной росписью представляет собой очаровательный цветочный дизайн в тонах коричневого и золота, с деликатными листьями и лепестками, которые добавляют текстуру поверхности. Если вы любите наслаждаться своим любимым напитком, то от этого куска земли не будет солнца 🌞\nЭтот маааленький чудак совершенно подходит для вас! 💛\nЦена: 150 ₪ (заказ)\nСтатус: Доступно для заказа\""
+    },
+    "published": {
+      "github": false,
+      "etsy": false,
+      "facebook": false
+    },
+    "updated_at": "2026-06-01T11:41:32.446819+00:00"
+  },
+  "20260216_100": {
+    "folder": "20260216_100",
+    "date": "2026-02-16",
+    "price_ils": 100,
+    "price_usd": 80,
+    "status": "available",
+    "images": [
+      "backend/downloads/20260216_100/IMG_7840.JPG",
+      "backend/downloads/20260216_100/IMG_7841.JPG",
+      "backend/downloads/20260216_100/IMG_7842.JPG",
+      "backend/downloads/20260216_100/IMG_7845.JPG",
+      "backend/downloads/20260216_100/IMG_7847.JPG",
+      "backend/downloads/20260216_100/IMG_7859.JPG",
+      "backend/downloads/20260216_100/IMG_7874.JPG",
+      "backend/downloads/20260216_100/IMG_7876.JPG",
+      "backend/downloads/20260216_100/IMG_7877.JPG"
+    ],
+    "videos": [
+      "backend/downloads/20260216_100/IMG_7892.mov"
+    ],
+    "ai": {
+      "title_en": "A Handcrafted Bird Soap Dish",
+      "description_en": "The bird soap dish is a beautiful piece of handmade ceramics, with a smooth glazed surface that feels gentle to the touch. Its unique shape and intricate design make it a perfect addition to any bathroom or home spa setting, providing both style and functionality in one elegant package.",
+      "title_ru": "Ручной декоративный блюдце для мыла птицей",
+      "description_ru": "Блюдце для мыла птицей - это прекрасное ручное изделие из керамики, с гладким покрытием глазурью, которое касаясь, дает чувство удобства. Его уникальная форма и детальный дизайн делают его идеальным дополнением для любой ванной комнаты или домашней спа-зоны, обеспечивая как стиль, так и функциональность в одном элегантном пакете.",
+      "seo_tags": [
+        "handmade-ceramics",
+        "bird-soap-dish",
+        "smooth-glazed",
+        "gentle-touch",
+        "bathroom-decor",
+        "home-spa",
+        "unique-design",
+        "intricate",
+        "style",
+        "functionality"
+      ],
+      "etsy_listing": "Title: Bird Soap Dish - Handcrafted Ceramic Soap Dish for Sale on Etsy!\n\nDescription: This handmade ceramic soap dish features a charming black bird design that will add a touch of elegance to your bathroom or home. The bird is beautifully crafted with intricate details, including its feathers and beak. Made from high-quality materials, this dish can hold multiple bars of soap, keeping them organized and within reach.\n\nOur artisan has put in a lot of effort into creating each piece, ensuring that they are unique and one-of-a-kind. The soaps inside the dish will not only serve their purpose but also act as an eye-catching decoration for your space. The dish is glazed with a non-slip surface to ensure easy use while adding an extra layer of protection against water damage.\n\nEvery purchase comes with a certificate of authenticity and a care guide on how to keep your soap dish looking great for years to come. Our bird soap dish makes for a thoughtful, stylish gift option that will be cherished by the recipient.\n\nMaterials: Ceramic, Glaze, Soap Pads (Simply place your favorite soaps inside).\n\nTags: handmade ceramics, soap dish, black bird design, eco-friendly, non-slip surface, glazed, bathroom decor, artisan crafted, unique gift.",
+      "social_post_ru": "\"ПРИВЕТ ВСЕМ🦊\nДа здравствует новое изделие моей руки - блюдце для мыла птицей! 🐤\n\nЯ сделала его именно для тех, кто ценит красоту и удобство. Оно выглядит так, будто быстро полетела в него птица и залилась вода, чтобы очистить свою лапину🐦\n\nМоя любимая маааленькая глина, подружка мне всегда и всегда приходится в помощь. И для этого блюдца она была отвечабельна! Глазурь гладко плавится на поверхности керамики и дает ощущение неотразимости 😍\n\nКасаясь блюдца, ты чувствуешь только удобство - это дело рук мастера! Блюдце выглядит так, что кажется, его можно легко схватить и не заплести в пальцы.\n\nУникальная форма блюдца и детальный дизайн превращают его в то, чего ты не найдешь ни у кого другом - он идеально подходит для любой вашей ванной комнаты или домашней спа-зоны. Как стиль, так и функциональность соединены в одном элегантном пакете 🎁\n\nЦена - ооочень приятная для гла"
+    },
+    "published": {
+      "github": false,
+      "etsy": false,
+      "facebook": false
+    },
+    "updated_at": "2026-06-01T11:26:01.966092+00:00"
   }
 }

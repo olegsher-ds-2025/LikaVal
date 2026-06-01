@@ -47,6 +47,7 @@ class ProductFolder:
     is_sold: bool
     images: list[Path] = field(default_factory=list)
     videos: list[Path] = field(default_factory=list)
+    description_file: Path | None = None
 
     @property
     def price_usd(self) -> float:
@@ -56,6 +57,53 @@ class ProductFolder:
     @property
     def status(self) -> str:
         return "sold" if self.is_sold else "available"
+
+
+def parse_description_file(path: Path) -> dict:
+    """Parse a ``description.txt`` file with EN:/RU: labelled sections.
+
+    Expected format::
+
+        EN:
+        Title: My Product
+        Description: Some multi-line text...
+
+        RU:
+        Название: Мой продукт
+        Описание: Текст...
+
+    Returns a dict with keys: title_en, description_en, title_ru, description_ru.
+    Missing fields are returned as empty strings.
+    """
+    text = path.read_text(encoding="utf-8").strip()
+    result: dict = {"title_en": "", "description_en": "", "title_ru": "", "description_ru": ""}
+
+    # Split by language section headers (EN: or RU: on their own line)
+    parts = re.split(r"\n\s*(EN|RU)\s*:\s*\n", text, flags=re.IGNORECASE)
+    # parts layout: [preamble, LABEL, block, LABEL, block, ...]
+    i = 1
+    while i + 1 < len(parts):
+        lang = parts[i].strip().upper()
+        block = parts[i + 1]
+
+        if lang == "EN":
+            title_m = re.search(r"^Title\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
+            desc_m = re.search(r"^Description\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
+            if title_m:
+                result["title_en"] = title_m.group(1).strip()
+            if desc_m:
+                result["description_en"] = desc_m.group(1).strip()
+        elif lang == "RU":
+            title_m = re.search(r"^(?:Title|Название)\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
+            desc_m = re.search(r"^(?:Description|Описание)\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
+            if title_m:
+                result["title_ru"] = title_m.group(1).strip()
+            if desc_m:
+                result["description_ru"] = desc_m.group(1).strip()
+
+        i += 2
+
+    return result
 
 
 def _parse_folder_name(name: str) -> dict | None:
@@ -216,26 +264,38 @@ def fetch_new_products() -> list[ProductFolder]:
         video_count = 0
 
         for f in files:
-            ext = Path(f["name"]).suffix.lstrip(".").lower()
+            fname = f["name"]
+            dest = dest_dir / fname
+
+            # Special case: always download description.txt if present
+            if fname.lower() == "description.txt":
+                try:
+                    _download_file(service, f["id"], dest)
+                    product.description_file = dest
+                    logger.info("Downloaded description file for %s", name)
+                except Exception as exc:
+                    log_error(name, f"Download failed for {fname}: {exc}")
+                continue
+
+            ext = Path(fname).suffix.lstrip(".").lower()
             is_image = ext in _SUPPORTED_IMAGES
             is_video = ext in _SUPPORTED_VIDEOS
 
             if not is_image and not is_video:
-                logger.debug("Ignoring unsupported file: %s", f["name"])
+                logger.debug("Ignoring unsupported file: %s", fname)
                 continue
 
             if is_image and image_count >= _MAX_IMAGES:
-                logger.debug("Image limit (%d) reached — skipping %s", _MAX_IMAGES, f["name"])
+                logger.debug("Image limit (%d) reached — skipping %s", _MAX_IMAGES, fname)
                 continue
             if is_video and video_count >= _MAX_VIDEOS:
-                logger.debug("Video limit (%d) reached — skipping %s", _MAX_VIDEOS, f["name"])
+                logger.debug("Video limit (%d) reached — skipping %s", _MAX_VIDEOS, fname)
                 continue
 
-            dest = dest_dir / f["name"]
             try:
                 _download_file(service, f["id"], dest)
             except Exception as exc:
-                log_error(name, f"Download failed for {f['name']}: {exc}")
+                log_error(name, f"Download failed for {fname}: {exc}")
                 continue
 
             if is_image:

@@ -149,6 +149,88 @@ def _parse_structured(text: str, title_key: str, desc_key: str) -> tuple[str, st
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def generate_social_post_ru(product: dict) -> str:
+    """Generate a Facebook/Instagram post in Lika Val's authentic voice (Russian).
+
+    Uses the `social_post_ru` prompt from config, which embeds her writing-style
+    example and all style rules so the model produces first-person storytelling
+    posts — not generic marketing copy.
+    """
+    prompt_template = _PROMPTS.get("social_post_ru", "")
+    if not prompt_template:
+        logger.warning("social_post_ru prompt not configured — skipping social post")
+        return ""
+
+    ai = product.get("ai", {})
+    status_label = "Продано" if product.get("status") == "sold" else "Доступно для заказа"
+    prompt = (
+        prompt_template
+        .replace("{title_ru}", ai.get("title_ru", ai.get("title_en", "")))
+        .replace("{description_ru}", ai.get("description_ru", ai.get("description_en", "")))
+        .replace("{price_usd}", str(product.get("price_usd", "")))
+        .replace("{status}", status_label)
+    )
+
+    try:
+        logger.info("Generating social post (RU) via %s...", _TEXT_MODEL)
+        post = _chat(
+            user_message=prompt,
+            system=(
+                "Ты — Лика Вал. Пиши исключительно от первого лица на русском языке "
+                "в тёплом, личном, storytelling стиле. Никаких маркетинговых клише."
+            ),
+            num_predict=400,
+        )
+        logger.info("Social post generated (%d chars)", len(post))
+        return post
+    except Exception as exc:
+        logger.error("Social post generation failed: %s", exc)
+        return ""
+
+
+def generate_workshop_post_ru(
+    workshop_title: str,
+    workshop_description: str,
+    price: str = "",
+    details: str = "",
+) -> str:
+    """Generate a Facebook/Instagram workshop announcement in Lika Val's voice.
+
+    Uses the `workshop_post_ru` prompt — philosophical, healing-focused tone
+    with anaphora on clay as a living/magical material.
+    """
+    prompt_template = _PROMPTS.get("workshop_post_ru", "")
+    if not prompt_template:
+        logger.warning("workshop_post_ru prompt not configured")
+        return ""
+
+    prompt = (
+        prompt_template
+        .replace("{workshop_title}", workshop_title)
+        .replace("{workshop_description}", workshop_description)
+        .replace("{price}", price)
+        .replace("{details}", details)
+    )
+
+    try:
+        logger.info("Generating workshop post (RU) via %s...", _TEXT_MODEL)
+        post = _chat(
+            user_message=prompt,
+            system=(
+                "Ты — Лика Вал. Пиши исключительно от первого лица на русском языке. "
+                "Стиль: тёплый, философский, поэтический. Глина — живой и магический материал. "
+                "Никаких маркетинговых клише и жёстких призывов к покупке."
+            ),
+            num_predict=500,
+        )
+        logger.info("Workshop post generated (%d chars)", len(post))
+        return post
+    except Exception as exc:
+        logger.error("Workshop post generation failed: %s", exc)
+        return ""
+
+
+
 def generate_product_content(
     images: list[Path],
     videos: list[Path] | None = None,
@@ -230,8 +312,59 @@ def generate_product_content(
         logger.error("Etsy listing failed: %s", exc)
         content["etsy_listing"] = ""
 
+    # — Social post in Lika Val's voice (Russian, text model) —
+    try:
+        logger.info("Generating social post (RU) via %s...", _TEXT_MODEL)
+        prompt_template = _PROMPTS.get("social_post_ru", "")
+        if prompt_template:
+            post_prompt = (
+                prompt_template
+                .replace("{title_ru}", content.get("title_ru", content.get("title_en", "")))
+                .replace("{description_ru}", content.get("description_ru", content.get("description_en", "")))
+                .replace("{price_usd}", "")   # price unknown at generation time; connector fills it
+                .replace("{status}", "Доступно для заказа")
+            )
+            content["social_post_ru"] = _chat(
+                user_message=post_prompt,
+                system=(
+                    "Ты — Лика Вал. Пиши исключительно от первого лица на русском языке "
+                    "в тёплом, личном, storytelling стиле. Никаких маркетинговых клише."
+                ),
+                num_predict=400,
+            )
+        else:
+            content["social_post_ru"] = ""
+    except Exception as exc:
+        logger.error("Social post generation failed: %s", exc)
+        content["social_post_ru"] = ""
+
     logger.info("AI content generation complete")
     return content
+
+
+def generate_seo_tags(description_en: str) -> list[str]:
+    """Generate SEO tags for a product given its English description.
+
+    Returns a list of up to 13 lowercase tags, or an empty list on failure.
+    """
+    try:
+        logger.info("Generating SEO tags via %s...", _TEXT_MODEL)
+        tags_prompt = _PROMPTS["seo_tags"].replace(
+            "{description}", description_en or "handmade ceramic piece"
+        )
+        raw_tags = _chat(
+            user_message=tags_prompt,
+            system="You are an SEO expert. Output only what is asked, no extra text.",
+            num_predict=150,
+        )
+        raw_tags = re.sub(r"[\*\-\d]+[\.\)]\s*", "", raw_tags)
+        return [
+            t.strip().lower() for t in re.split(r"[,\n]", raw_tags)
+            if t.strip() and len(t.strip()) < 60
+        ][:13]
+    except Exception as exc:
+        logger.error("SEO tags failed: %s", exc)
+        return []
 
 
 def check_ollama_health() -> bool:

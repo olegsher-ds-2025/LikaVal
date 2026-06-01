@@ -17,7 +17,18 @@ docker compose up --build
 
 # Run a single backend module directly
 python -m backend.src.media_fetcher
+
+# Run all tests
+pytest backend/tests/
+
+# Run a single test file
+pytest backend/tests/test_media_fetcher.py
+
+# Run a single test by name
+pytest backend/tests/test_media_fetcher.py::TestParseFolderName::test_available_product
 ```
+
+> **External dependency:** `ffmpeg` must be installed on the host for video frame extraction in the AI module.
 
 ---
 
@@ -94,16 +105,47 @@ The backend communicates with Ollama via HTTP. The endpoint (IP + port) is confi
 
 Backend state (processed folders, publish timestamps, sync status, error logs) is stored in editable text files. All state files must be Git-compatible. No SQLite, no Postgres.
 
+A product is considered **already processed** when `state/products.json` contains an entry for that folder with a non-empty `ai.title_en` field. This is the check in `state_manager.is_processed()` — avoid re-generating AI content for entries that pass this check.
+
+---
+
+## Adding a New Publishing Connector
+
+All connectors live in `backend/src/connectors/`. To add a new platform:
+
+1. Subclass `BaseConnector` from `backend/src/connectors/base.py`
+2. Set the `name` class attribute (used as the platform key in `state/products.json`)
+3. Implement `publish(self, folder: str, product: dict) -> bool`
+4. Optionally override `_is_enabled(self) -> bool` (reads from `CONFIG`)
+5. Add the connector to the `connectors` list in `backend/main.py`
+
+`safe_publish()` on the base class wraps `publish()` with error handling and logging — always call `safe_publish()` from the pipeline, never `publish()` directly.
+
+---
+
+## AI Module — Two-Model Setup
+
+The AI module uses two separate Ollama models configured in `config/config.yaml`:
+
+| Key | Default | Purpose |
+|---|---|---|
+| `ollama.model` | `llava-phi3` | Vision model — analyzes images via `/api/generate` |
+| `ollama.text_model` | `qwen2.5:7b-instruct-q4_K_M` | Text-only — translation, SEO tags, social posts via `/api/chat` |
+
+Use `_generate()` for vision tasks (passes base64 image in payload). Use `_chat()` for text tasks — it sets a `system` message to constrain language and prevent the qwen2.5 Chinese-fallback issue.
+
+Prompts are fully configurable under `ollama.prompts` in `config.yaml` and support `{placeholder}` substitution at call time.
+
 ---
 
 ## Configuration
 
-Config files should use YAML, JSON, or `.env`. Key parameters:
+Config is loaded from `config/config.yaml` as a singleton (`from backend.src.config import CONFIG`). Values support `${ENV_VAR:default}` placeholders — the loader substitutes them from environment variables or `.env` at startup. Secrets go in `.env` (gitignored). Structure config stays in YAML (committed).
 
 | Parameter | Description |
 |---|---|
 | `ollama_host` | AI service endpoint (IP:port) |
-| `gdrive_folder_id` | Google Drive media source |
+| `gdrive_folder_id` / `gdrive_folder_name` | Google Drive media source (ID takes priority) |
 | `ils_to_usd_ratio` | Currency conversion coefficient |
 | `publish_schedule` | Cron timing for automation runs |
 | Platform credentials | API keys for Etsy, Facebook, GitHub |
