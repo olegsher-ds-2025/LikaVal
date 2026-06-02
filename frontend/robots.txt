@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://likaval.com/sitemap.xml
