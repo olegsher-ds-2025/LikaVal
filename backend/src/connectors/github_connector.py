@@ -86,10 +86,14 @@ class GitHubConnector(BaseConnector):
             )
             return f'{main}\n<div class="gallery-thumbs">{thumbs}</div>'
 
+        # Sold if status field says so, or folder name ends with _sold, or no parseable price
+        import re as _re
+        _folder_sold = bool(_re.search(r'_sold', folder, _re.IGNORECASE))
+        is_sold = product.get("status") == "sold" or _folder_sold
+
         for lang in ("en", "ru"):
             title = ai.get(f"title_{lang}") or ai.get("title_en", folder)
             description = ai.get(f"description_{lang}") or ai.get("description_en", "")
-            is_sold = product.get("status") == "sold"
             price_ils = product.get("price_ils", "")
             price_usd = product.get("price_usd", "")
             tags = ai.get("seo_tags", [])
@@ -131,7 +135,7 @@ class GitHubConnector(BaseConnector):
                 highlight_3    = ("✨", "Единственный экземпляр", "Каждое изделие уникально")
                 desc_label     = "Об изделии"
                 tags_label     = "Теги"
-                btn_available  = "Написать для покупки"
+                btn_available  = "Написать в WhatsApp"
                 btn_sold       = "Продано — Смотреть похожие"
                 btn_sold_href  = f"/{lang}/catalog.html"
                 btn_etsy       = "Смотреть на Etsy"
@@ -152,10 +156,18 @@ class GitHubConnector(BaseConnector):
             active_en   = ' class="active"' if lang == "en" else ""
             active_ru   = ' class="active"' if lang == "ru" else ""
             badge_html  = badge_sold if is_sold else badge_avail
+            _wa_msg = (
+                "%D0%9C%D0%BD%D0%B5%20%D0%BF%D0%BE%D0%BD%D1%80%D0%B0%D0%B2%D0%B8%D0%BB%D0%BE%D1%81%D1%8C"
+                "%20%D0%B2%D0%B0%D1%88%D0%B5%20%D0%B8%D0%B7%D0%B4%D0%B5%D0%BB%D0%B8%D0%B5%2C"
+                "%20%D1%85%D0%BE%D1%87%D1%83%20%D0%BF%D0%BE%D0%B4%D1%80%D0%BE%D0%B1%D0%BD%D0%B5%D0%B5"
+                "%20%D1%83%D0%B7%D0%BD%D0%B0%D1%82%D1%8C%20%D0%BE%20%D0%B2%D0%B0%D1%88%D0%B5%D0%BC"
+                "%20%D1%82%D0%B2%D0%BE%D1%80%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%B5"
+            )
+            _wa_href = f"https://wa.me/972545308681?text={_wa_msg}" if lang == "ru" else "mailto:info@likaval.com"
             action_html = (
                 f'<a href="{btn_sold_href}" class="btn-primary disabled">{btn_sold}</a>'
                 if is_sold else
-                f'<a href="mailto:info@likaval.com" class="btn-primary">{btn_available}</a>\n'
+                f'<a href="{_wa_href}" class="btn-primary" target="_blank" rel="noopener">{btn_available}</a>\n'
                 f'<a href="https://www.etsy.com/shop/LVSoulCeramics" class="btn-secondary"'
                 f' target="_blank" rel="noopener">{btn_etsy}</a>'
             )
