@@ -64,79 +64,158 @@ class GitHubConnector(BaseConnector):
             )
             return f'{main}\n<div class="gallery-thumbs">{thumbs}</div>'
 
+        first_img_name = Path(images[0]).name if images else ""
+
+        def gallery_html_with_alt(folder_name, imgs, alt_title):
+            if not imgs:
+                return '<div class="gallery-main"><div style="aspect-ratio:1;background:#f5f2ef"></div></div>'
+            first = Path(imgs[0]).name
+            main = (
+                f'<div class="gallery-main">'
+                f'<img id="gallery-active" src="/assets/products/{folder_name}/{first}"'
+                f' alt="{alt_title}">'
+                f'</div>'
+            )
+            thumbs = "\n".join(
+                f'<button class="gallery-thumb{" active" if i == 0 else ""}" '
+                f'data-src="/assets/products/{folder_name}/{Path(img).name}">'
+                f'<img src="/assets/products/{folder_name}/{Path(img).name}"'
+                f' alt="{alt_title} — фото {i+1}">'
+                f'</button>'
+                for i, img in enumerate(imgs)
+            )
+            return f'{main}\n<div class="gallery-thumbs">{thumbs}</div>'
+
         for lang in ("en", "ru"):
             title = ai.get(f"title_{lang}") or ai.get("title_en", folder)
             description = ai.get(f"description_{lang}") or ai.get("description_en", "")
             is_sold = product.get("status") == "sold"
-            price = product.get("price_usd", "")
+            price_ils = product.get("price_ils", "")
+            price_usd = product.get("price_usd", "")
             tags = ai.get("seo_tags", [])
-            keywords = ", ".join(tags)
+            canonical_url = f"https://likaval.com/{lang}/products/{folder}.html"
+            og_image_url  = f"https://likaval.com/assets/products/{folder}/{first_img_name}"
+            schema_avail  = "https://schema.org/OutOfStock" if is_sold else "https://schema.org/InStock"
 
-            # Labels
             if lang == "en":
-                site_name     = "LikaVal Ceramics"
-                catalog_label = "Catalog"
-                craft_note    = "Handmade · One of a kind"
-                highlight_1   = ("🏺", "Handmade", "Shaped and glazed by hand")
-                highlight_2   = ("📦", "Ships from Israel", "Worldwide shipping available")
-                highlight_3   = ("✨", "One of a kind", "Each piece is unique")
-                desc_label    = "About this piece"
-                tags_label    = "Tags"
-                btn_available = "Contact to Purchase"
-                btn_sold      = "Sold — View similar pieces"
-                btn_sold_href = f"/{lang}/catalog.html"
+                site_name      = "LikaVal Ceramics"
+                site_title_tag = f"{title} — Handmade Ceramics Petah Tikva | LikaVal"
+                meta_desc      = f"{title}. Handmade ceramic art from Petah Tikva, Israel. {description[:100]}"
+                og_locale      = "en_US"
+                catalog_label  = "Catalog"
+                craft_note     = "Handmade · One of a kind"
+                highlight_1    = ("🏺", "Handmade", "Shaped and glazed by hand")
+                highlight_2    = ("📦", "Ships from Israel", "Worldwide shipping available")
+                highlight_3    = ("✨", "One of a kind", "Each piece is unique")
+                desc_label     = "About this piece"
+                tags_label     = "Tags"
+                btn_available  = "Contact to Purchase"
+                btn_sold       = "Sold — View similar pieces"
+                btn_sold_href  = f"/{lang}/catalog.html"
+                btn_etsy       = "View on Etsy"
+                badge_avail    = '<span class="badge available">In Stock</span>'
+                badge_sold     = '<span class="badge sold">Sold</span>'
+                footer_desc    = "Handmade ceramics studio based in Petah Tikva, Israel."
+                footer_nav_html = f'<h3>{catalog_label}</h3><ul><li><a href="/en/catalog.html">{catalog_label}</a></li></ul>'
+                price_html     = f'<span class="currency">$</span>{price_usd}'
+                keywords       = ", ".join(tags)
             else:
-                site_name     = "LikaVal Керамика"
-                catalog_label = "Каталог"
-                craft_note    = "Ручная работа · Единственный экземпляр"
-                highlight_1   = ("🏺", "Ручная работа", "Лепка и обжиг вручную")
-                highlight_2   = ("📦", "Отправка из Израиля", "Доставка по всему миру")
-                highlight_3   = ("✨", "Единственный экземпляр", "Каждое изделие уникально")
-                desc_label    = "Об изделии"
-                tags_label    = "Теги"
-                btn_available = "Написать для покупки"
-                btn_sold      = "Продано — Смотреть похожие"
-                btn_sold_href = f"/{lang}/catalog.html"
+                site_name      = "Лика Вал | Керамика"
+                site_title_tag = f"{title} — авторская керамика ручной работы, Петах-Тиква | Лика Вал"
+                meta_desc      = f"{title} — авторская керамика ручной работы из Петах-Тиквы. {description[:100]}"
+                og_locale      = "ru_RU"
+                catalog_label  = "Каталог"
+                craft_note     = "Ручная работа · Единственный экземпляр"
+                highlight_1    = ("🏺", "Ручная работа", "Лепка и обжиг вручную")
+                highlight_2    = ("📦", "Отправка из Израиля", "Доставка по всему миру")
+                highlight_3    = ("✨", "Единственный экземпляр", "Каждое изделие уникально")
+                desc_label     = "Об изделии"
+                tags_label     = "Теги"
+                btn_available  = "Написать для покупки"
+                btn_sold       = "Продано — Смотреть похожие"
+                btn_sold_href  = f"/{lang}/catalog.html"
+                btn_etsy       = "Смотреть на Etsy"
+                badge_avail    = '<span class="badge available">В наличии</span>'
+                badge_sold     = '<span class="badge sold">Продано</span>'
+                footer_desc    = "Авторская керамика ручной работы и мастер-классы в Петах-Тикве, Израиль."
+                footer_nav_html = (
+                    '<h3>Мастер-классы</h3><ul>'
+                    '<li><a href="/ru/workshop-standard.html">Мастер-класс по керамике</a></li>'
+                    '<li><a href="/ru/workshop-silver.html">Серебряный мастер-класс</a></li>'
+                    '<li><a href="/ru/workshop-gold.html">Золотой мастер-класс</a></li>'
+                    '<li><a href="/ru/kruzhok.html">Кружок керамики для взрослых</a></li>'
+                    '</ul>'
+                )
+                price_html     = f'{price_ils} <span class="currency">₪</span>'
+                keywords       = ", ".join(t.replace(" ", " ") for t in tags)
 
-            active_en  = ' class="active"' if lang == "en" else ""
-            active_ru  = ' class="active"' if lang == "ru" else ""
-            badge_html = (
-                '<span class="badge sold">Sold</span>' if is_sold
-                else '<span class="badge available">Available</span>'
-            )
+            active_en   = ' class="active"' if lang == "en" else ""
+            active_ru   = ' class="active"' if lang == "ru" else ""
+            badge_html  = badge_sold if is_sold else badge_avail
             action_html = (
                 f'<a href="{btn_sold_href}" class="btn-primary disabled">{btn_sold}</a>'
                 if is_sold else
-                '<a href="mailto:info@likaval.com" class="btn-primary">'
-                f'{btn_available}</a>\n'
-                '<a href="https://www.etsy.com/shop/LVSoulCeramics" class="btn-secondary" '
-                'target="_blank" rel="noopener">View on Etsy</a>'
+                f'<a href="mailto:info@likaval.com" class="btn-primary">{btn_available}</a>\n'
+                f'<a href="https://www.etsy.com/shop/LVSoulCeramics" class="btn-secondary"'
+                f' target="_blank" rel="noopener">{btn_etsy}</a>'
             )
-            tags_html = "".join(
-                f'<span class="product-tag">{t}</span>' for t in tags
-            )
+            tags_html  = "".join(f'<span class="product-tag">{t}</span>' for t in tags)
             hicon1, hstrong1, hp1 = highlight_1
             hicon2, hstrong2, hp2 = highlight_2
             hicon3, hstrong3, hp3 = highlight_3
+            alt_title = f"{title} — авторская керамика, Петах-Тиква" if lang == "ru" else title
+
+            nav_extra = (
+                '\n      <a href="/ru/workshops.html">Мастер-классы</a>'
+                '\n      <a href="/ru/kruzhok.html">Кружок керамики</a>'
+            ) if lang == "ru" else ""
+
+            json_ld = (
+                '{{"@context":"https://schema.org","@type":"Product",'
+                f'"name":"{title}",'
+                f'"description":"{description[:200]}",'
+                f'"image":"{og_image_url}",'
+                '"brand":{{"@type":"Brand","name":"Лика Вал / Soul Ceramics"}},'
+                f'"offers":{{"@type":"Offer","priceCurrency":"ILS","price":"{price_ils}",'
+                f'"availability":"{schema_avail}",'
+                '"seller":{{"@type":"LocalBusiness","name":"Soul Ceramics — Лика Вал",'
+                '"address":{{"@type":"PostalAddress","streetAddress":"Нахалат Цви 1",'
+                '"addressLocality":"Петах-Тиква","addressCountry":"IL"}}}}}}}}'
+            )
 
             html = f"""<!DOCTYPE html>
 <html lang="{lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{title} — {site_name}</title>
-  <meta name="description" content="{description[:160]}">
+  <title>{site_title_tag}</title>
+  <meta name="description" content="{meta_desc[:160]}">
   <meta name="keywords" content="{keywords}">
+  <link rel="canonical" href="{canonical_url}">
+  <meta property="og:type" content="product">
   <meta property="og:title" content="{title}">
-  <meta property="og:description" content="{description[:160]}">
-  <meta property="og:image" content="/assets/products/{folder}/{Path(images[0]).name if images else ''}">
+  <meta property="og:description" content="{meta_desc[:160]}">
+  <meta property="og:image" content="{og_image_url}">
+  <meta property="og:url" content="{canonical_url}">
+  <meta property="og:locale" content="{og_locale}">
+  <script type="application/ld+json">{json_ld}</script>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
   <link rel="stylesheet" href="/assets/css/main.css">
+  <!-- Event snippet for Page view conversion page -->
+  <script>
+    gtag('event', 'conversion', {{
+        'send_to': 'AW-17964316904/HNvQCOGA1rccEOjxhvZC',
+        'value': 1.0,
+        'currency': 'ILS'
+    }});
+  </script>
 </head>
 <body>
   <header class="site-header">
     <a href="/{lang}/" class="site-title">{site_name}</a>
     <nav class="site-nav">
-      <a href="/{lang}/catalog.html">{catalog_label}</a>
+      <a href="/{lang}/catalog.html">{catalog_label}</a>{nav_extra}
     </nav>
     <div class="lang-switcher">
       <a href="/en/products/{folder}.html"{active_en}>EN</a>
@@ -157,7 +236,7 @@ class GitHubConnector(BaseConnector):
 
       <!-- ── Image gallery ── -->
       <div class="product-gallery" role="region" aria-label="Product images">
-        {gallery_html(folder, images)}
+        {gallery_html_with_alt(folder, images, alt_title)}
       </div>
 
       <!-- ── Info panel ── -->
@@ -173,7 +252,7 @@ class GitHubConnector(BaseConnector):
 
         <div class="product-price-row">
           <div class="product-price">
-            <span class="currency">$</span>{price}
+            {price_html}
           </div>
           {badge_html}
         </div>
@@ -215,15 +294,23 @@ class GitHubConnector(BaseConnector):
     <div class="footer-inner content-wide">
       <div class="footer-brand">
         <a href="/{lang}/" class="site-title">{site_name}</a>
-        <p>Handmade ceramics studio based in Petah Tikva, Israel.</p>
+        <p>{footer_desc}</p>
       </div>
       <nav class="footer-nav">
-        <h3>{catalog_label}</h3>
-        <ul><li><a href="/{lang}/catalog.html">{catalog_label}</a></li></ul>
+        {footer_nav_html}
       </nav>
     </div>
-    <p class="footer-bottom">&copy; {site_name}</p>
+    <p class="footer-bottom">&copy; {site_name} · <a href="mailto:info@likaval.com" style="color:inherit">info@likaval.com</a></p>
   </footer>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17964316904"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){{dataLayer.push(arguments);}}
+    gtag('js', new Date());
+    gtag('config', 'AW-17964316904');
+  </script>
 
   <script>
     // Thumbnail gallery switcher
