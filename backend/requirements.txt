@@ -7,3 +7,4 @@ python-dotenv>=1.0.0
 Pillow>=10.0.0
 APScheduler>=3.10.4
 GitPython>=3.1.40
+playwright>=1.40.0          # Etsy browser automation — run `playwright install chromium` after install

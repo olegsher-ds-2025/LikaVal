@@ -108,8 +108,12 @@ github:
   commit_message: "chore: auto-publish product updates"
 
 etsy:
-  api_key: "${ETSY_API_KEY:}"
-  shop_id: "${ETSY_SHOP_ID:}"
+  username: "${ETSY_USERNAME:}"       # Etsy seller account email
+  password: "${ETSY_PASSWORD:}"       # Etsy seller account password
+  shop_name: "${ETSY_SHOP_NAME:}"     # Shop name slug (used to build listing URLs)
+  headless: true                      # false for local debugging
+  slow_mo_ms: 0                       # set ~200 for visual debugging
+  session_file: "state/etsy_session.json"
   enabled: false  # set to true when credentials are configured
 
 facebook:
