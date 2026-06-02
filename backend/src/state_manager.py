@@ -68,9 +68,15 @@ def upsert_product(folder: str, data: dict) -> None:
 
 
 def is_processed(folder: str) -> bool:
-    """Return True if the folder has already been fully processed."""
+    """Return True if the folder has already been fully processed (has AI text content)."""
     product = get_product(folder)
     return bool(product and product.get("ai", {}).get("title_en"))
+
+
+def is_pending_text(folder: str) -> bool:
+    """Return True if the folder was registered but is waiting for a description text file."""
+    product = get_product(folder)
+    return bool(product and product.get("pending_text"))
 
 
 def mark_published(folder: str, platform: str) -> None:

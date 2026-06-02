@@ -149,6 +149,34 @@ def _parse_structured(text: str, title_key: str, desc_key: str) -> tuple[str, st
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def translate_to_russian(title_en: str, description_en: str) -> dict:
+    """Translate English title and description to Russian using the text model.
+
+    Returns dict with keys: title_ru, description_ru. Empty strings on failure.
+    """
+    prompt_template = _PROMPTS.get("translate_ru", "")
+    if not prompt_template:
+        logger.warning("translate_ru prompt not configured — skipping translation")
+        return {"title_ru": "", "description_ru": ""}
+
+    prompt = prompt_template.format(title=title_en, description=description_en)
+    try:
+        logger.info("Translating EN→RU via %s...", _TEXT_MODEL)
+        raw = _chat(
+            user_message=prompt,
+            system="Переводи точно и только на русский язык. Сохраняй структуру ответа.",
+            num_predict=500,
+        )
+        title_ru, desc_ru = _parse_structured(raw, "НАЗВАНИЕ", "ОПИСАНИЕ")
+        if not title_ru:
+            title_ru, desc_ru = _parse_structured(raw, "Title", "Description")
+        logger.info("Translation done — title_ru=%s", (title_ru or "")[:60])
+        return {"title_ru": title_ru, "description_ru": desc_ru}
+    except Exception as exc:
+        logger.error("Translation failed: %s", exc)
+        return {"title_ru": "", "description_ru": ""}
+
+
 def generate_social_post_ru(product: dict) -> str:
     """Generate a Facebook/Instagram post in Lika Val's authentic voice (Russian).
 

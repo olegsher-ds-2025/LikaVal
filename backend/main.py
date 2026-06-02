@@ -22,7 +22,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from backend.src.config import CONFIG
-from backend.src.ai_module import generate_product_content, generate_seo_tags, check_ollama_health
+from backend.src.ai_module import generate_product_content, generate_seo_tags, check_ollama_health, translate_to_russian
 from backend.src.media_fetcher import fetch_new_products, parse_description_file
 from backend.src.state_manager import upsert_product, mark_published, append_sync_entry, log_error
 from backend.src.connectors.github_connector import GitHubConnector
@@ -88,44 +88,65 @@ def run_pipeline() -> None:
         folder = product_folder.folder_name
         logger.info("Processing product: %s", folder)
 
-        # 3. Build AI content — prefer description file over Ollama
+        # 3. Build content from description file only (no Ollama vision)
         try:
             if product_folder.description_file and product_folder.description_file.exists():
-                logger.info(
-                    "Using description file for %s (skipping Ollama vision/translation)", folder
-                )
+                logger.info("Using description file for %s", folder)
                 parsed = parse_description_file(product_folder.description_file)
+
+                title_ru = parsed["title_ru"]
+                desc_ru  = parsed["description_ru"]
+
+                # If RU section missing but EN present → translate via Ollama
+                if not title_ru and parsed.get("title_en"):
+                    if ollama_ok:
+                        logger.info("No RU text found — translating EN→RU for %s", folder)
+                        translated = translate_to_russian(
+                            parsed["title_en"], parsed["description_en"]
+                        )
+                        title_ru = translated["title_ru"]
+                        desc_ru  = translated["description_ru"]
+                    else:
+                        logger.warning(
+                            "Ollama unavailable — EN→RU translation skipped for %s", folder
+                        )
+
                 ai_content: dict = {
-                    "title_en": parsed["title_en"],
+                    "title_en":       parsed["title_en"],
                     "description_en": parsed["description_en"],
-                    "title_ru": parsed["title_ru"],
-                    "description_ru": parsed["description_ru"],
-                    "seo_tags": [],
-                    "etsy_listing": "",
+                    "title_ru":       title_ru,
+                    "description_ru": desc_ru,
+                    "seo_tags":       [],
+                    "etsy_listing":   "",
                     "social_post_ru": "",
                 }
-                # Generate SEO tags from the EN description if Ollama is available
-                if ollama_ok and parsed["description_en"]:
-                    ai_content["seo_tags"] = generate_seo_tags(parsed["description_en"])
-            elif ollama_ok:
-                ai_content = generate_product_content(
-                    images=product_folder.images,
-                    videos=product_folder.videos,
-                )
+                # Generate SEO tags from available text
+                text_for_tags = desc_ru or parsed["description_en"]
+                if ollama_ok and text_for_tags:
+                    ai_content["seo_tags"] = generate_seo_tags(text_for_tags)
+
             else:
-                logger.error(
-                    "No description file and Ollama unavailable for %s — skipping AI", folder
+                # No description file yet — publish empty page, mark pending
+                logger.info(
+                    "No description file for %s — publishing empty page (pending_text=True)",
+                    folder,
                 )
-                log_error(folder, "No description file and Ollama unreachable")
-                continue
+                ai_content = {
+                    "title_en": "", "description_en": "",
+                    "title_ru": "", "description_ru": "",
+                    "seo_tags": [], "etsy_listing": "", "social_post_ru": "",
+                }
+
         except Exception as exc:
-            log_error(folder, f"AI generation failed: {exc}")
+            log_error(folder, f"Content processing failed: {exc}")
             continue
 
-        # Update state with AI content
+        # Update state — clear pending_text when content is available
         from backend.src.state_manager import get_product
         product_data = get_product(folder) or {}
         product_data["ai"] = ai_content
+        has_content = bool(ai_content.get("title_ru") or ai_content.get("title_en"))
+        product_data["pending_text"] = not has_content
         upsert_product(folder, product_data)
         product_data = get_product(folder)  # reload after upsert
 

@@ -25,7 +25,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
 
 from backend.src.config import CONFIG
-from backend.src.state_manager import is_processed, upsert_product, log_error
+from backend.src.state_manager import get_product, is_processed, upsert_product, log_error
 
 logger = logging.getLogger(__name__)
 
@@ -250,8 +250,39 @@ def fetch_new_products() -> list[ProductFolder]:
             logger.debug("Skipping non-product folder: %s", name)
             continue
 
+        existing = get_product(name)
+
+        # Fully processed (has text content) → skip entirely
         if is_processed(name):
             logger.debug("Already processed: %s", name)
+            continue
+
+        # Pending text file → only check Drive for description.txt, reuse local images
+        if existing and existing.get("pending_text"):
+            logger.info("Pending text — re-checking Drive for description.txt: %s", name)
+            files = _list_items(service, folder["id"])
+            desc_item = next(
+                (f for f in files if f["name"].lower() == "description.txt"), None
+            )
+            if not desc_item:
+                logger.debug("Still no description.txt for pending product: %s", name)
+                continue
+            dest_dir = download_base / name
+            dest = dest_dir / "description.txt"
+            try:
+                _download_file(service, desc_item["id"], dest)
+            except Exception as exc:
+                log_error(name, f"description.txt download failed: {exc}")
+                continue
+            # Return with existing local image/video paths from state (no re-download)
+            pf = ProductFolder(
+                folder_id=folder["id"], folder_name=name, **meta,
+                images=[Path(p) for p in existing.get("images", []) if Path(p).exists()],
+                videos=[Path(p) for p in existing.get("videos", []) if Path(p).exists()],
+                description_file=dest,
+            )
+            logger.info("Found description.txt for pending product %s — queued for processing", name)
+            new_products.append(pf)
             continue
 
         logger.info("New product folder detected: %s", name)
