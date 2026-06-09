@@ -189,55 +189,6 @@
     "created_at": "2026-05-19T16:45:59.249429+00:00",
     "updated_at": "2026-06-09T08:03:28.478371+00:00"
   },
-  "20260519_150": {
-    "folder": "20260519_150",
-    "date": "2026-05-19",
-    "price_ils": 150,
-    "price_usd": 120,
-    "status": "available",
-    "images": [
-      "backend/downloads/20260519_150/IMG_0869.JPG",
-      "backend/downloads/20260519_150/IMG_0872.JPG",
-      "backend/downloads/20260519_150/IMG_0873.JPG",
-      "backend/downloads/20260519_150/IMG_0874.JPG",
-      "backend/downloads/20260519_150/IMG_0875.JPG",
-      "backend/downloads/20260519_150/IMG_0880.JPG",
-      "backend/downloads/20260519_150/IMG_0881.JPG",
-      "backend/downloads/20260519_150/IMG_0882.JPG",
-      "backend/downloads/20260519_150/IMG_0892.JPG",
-      "backend/downloads/20260519_150/IMG_0893.JPG"
-    ],
-    "videos": [
-      "backend/downloads/20260519_150/IMG_0885.MOV"
-    ],
-    "ai": {
-      "title_en": "Handmade Ceramic Olive Dish",
-      "description_en": "This handmade ceramic dish brings a touch of Mediterranean warmth and artisan soul into your home. Carefully crafted from natural clay, it is hand-painted with delicate olive branches and vibrant olive fruits, giving each piece its own unique character and gentle imperfections that make handmade pottery so special. Soft earthy tones combined with sunny yellow and olive green details create a cozy rustic aesthetic inspired by countryside kitchens and slow living. A lovely addition to a farmhouse interior and a unique decorative piece for everyday use. ✨ Details: • Handmade ceramic dish • Hand-painted olive branch design • Glossy food-safe glaze • Unique artisan piece — no two are exactly alike • Rustic Mediterranean style Made with love and attention to detail for those who appreciate authentic handmade ceramics and cozy home moments 🫒💛",
-      "title_ru": "Резное керамическое блюдо для олив",
-      "description_ru": "Это резное керамическое блюдо добавляет в ваш дом прикольный запах средневосточной теплоты и духа ручного дела. Оно изготовлено из натуральной глины и ручным покрасом с оливковыми ветками и яркими оливками, придавая каждому изделию свое уникальное характер и благородные несовершенства, которые делают резную керамику так специальной. Теплые земляные тона в сочетании с яркими желтыми и зелеными деталями создают тёплую рустичную атмосферу, инspiрированную сельской кухней и медленному образу жизни. Прекрасно подходит для украшения фермерского интерьера и является уникальной декоративной вещью для повседневного использования ✨ Детали:\n• Резное керамическое блюдо\n• Ручной покрас оливковой ветки\n• Прозрачный продуктобезопасный красок\n• Уникальное ручное изделие — каждый экземпляр отличается друг от друга\n• Рустичный стиль Средиземноморья\nСделано с любовью и вниманием к деталям для тех, кто ценит настоящую резную керамику и тёплые домашние моменты 🫒💛",
-      "seo_tags": [
-        "handmade-ceramic",
-        "mediterranean-style",
-        "artisan-piece",
-        "olive-branch-design",
-        "food-safe",
-        "unique",
-        "rustic",
-        "countryside-kitchen",
-        "farmhouse-interior",
-        "everyday-use"
-      ],
-      "etsy_listing": "Title: Co Bones Plate - A Unique Handcrafted Ceramic Piece\n\nDescription: Introducing the Co Bones plate, a one-of-a-kind handmade ceramic piece that combines functionality with style. The plate features a charming tree design adorned with vibrant green leaves and delicate yellow fruit, adding an artistic touch to any dining experience. Crafted from high-quality clay, this Co Bones plate is both durable and aesthetically pleasing.\n\nThe tree depicted on the plate represents growth and resilience, making it not only a beautiful addition to your tableware collection but also a thoughtful gift for those who appreciate nature's beauty. The hand-painted design showcases the artist's attention to detail and skill in creating unique pieces that stand out from mass-produced alternatives.\n\nThis Co Bones plate is perfect for serving small appetizers or desserts, adding a touch of elegance to any gathering. Whether you choose it as a personal decoration or gift, this handcrafted ceramic piece will surely impress and inspire conversation among your guests.\n\nMaterials: The Co Bones plate is made from high-quality clay that has been fired and glazed for durability and a smooth finish.\n\nTags: Handmade Ceramic, Tree Design, Fruit Leaves, Dinnerware, Eco-Friendly, Artisan Craftsmanship, Unique Gifts, Home Decor, Sustainable Materials, Fine Pottery, Aesthetic Appeal.",
-      "social_post_ru": "Привет, все!🦊\nЧто ж, пора вновь рассказать о чудесе, которое я сотворила. Это - моя ручная керамическая тарелка с оливками. 🥰\n\nВот как это все началось: меня застигло необыкновенное вдохновение, и мне стало ясно, что я должна создать что-то новое и уникальное. Я отправилась к своему любимому источнику глины и начала работать над этим маленьким чудом. 🌱\n\nЯ взяла самую мягкую и приятную на ощупь глину, которая была совершенно прекрасна для моей работы. Затем я задумалась над дизайном и решила украсить эту тарелку сценкой из оливкового сада. 🍃\n\nЯ взяла тучи тонких чернил и начала показывать деталей оливок, листьев и ветвей - каждая точка была нарисована с любовью и умением. Затем я покрасила все в светлые земляные тона, сочетанные с жарким желтым и зеленоватым деталями. 🌿\n\nКогда работа была закончена, я нанесла круглую глазурь на поверхность, которая подчеркивала все уникальные детали. Этот процесс был"
-    },
-    "published": {
-      "github": false,
-      "etsy": false,
-      "facebook": false
-    },
-    "updated_at": "2026-06-09T08:44:22.572491+00:00",
-    "pending_text": false
-  },
   "20260520_280": {
     "folder": "20260520_280",
     "date": "2026-05-20",

@@ -377,8 +377,13 @@ class GitHubConnector(BaseConnector):
                 filter_avail   = "Доступно"
                 filter_sold    = "Продано"
                 count_label    = f"{available} доступно · {total} изделий"
-                price_prefix   = "$"
+                price_prefix   = ""
+                price_suffix   = " ₪"
                 sold_label     = "Продано"
+
+            if lang == "en":
+                price_prefix = "$"
+                price_suffix = ""
 
             cards_html = ""
             for f_name, p in sorted(products.items(), reverse=True):
@@ -387,7 +392,7 @@ class GitHubConnector(BaseConnector):
                 status  = p.get("status", "available")
                 is_sold = status == "sold"
                 images  = p.get("images", [])
-                price   = p.get("price_usd", "")
+                price   = p.get("price_usd" if lang == "en" else "price_ils", "")
                 thumb   = (
                     f'<img src="/assets/products/{f_name}/{Path(images[0]).name}" '
                     f'alt="{title}" loading="lazy">'
@@ -405,7 +410,7 @@ class GitHubConnector(BaseConnector):
           </div>
           <div class="catalog-card__body">
             <h2 class="catalog-card__title">{title}</h2>
-            <p class="catalog-card__price">{price_prefix}{price}</p>
+            <p class="catalog-card__price">{price_prefix}{price}{price_suffix}</p>
           </div>
         </a>
       </article>"""
@@ -507,33 +512,32 @@ class GitHubConnector(BaseConnector):
         import re as _re
 
         products = load_products()
-        latest = sorted(products.items(), reverse=True)[:3]
+        available = [
+            (k, v) for k, v in products.items() if v.get("status") != "sold"
+        ]
+        latest = sorted(available, reverse=True)[:3]
 
         cards_html = ""
         for f_name, p in latest:
             ai     = p.get("ai", {})
             title  = ai.get("title_ru") or ai.get("title_en", f_name)
             images = p.get("images", [])
-            price  = p.get("price_usd", "")
-            is_sold = p.get("status") == "sold"
+            price  = p.get("price_ils", "")
             thumb  = (
                 f'<img src="/assets/products/{f_name}/{Path(images[0]).name}" '
                 f'alt="{title}" loading="lazy">'
                 if images else '<div class="catalog-card__no-image"></div>'
             )
-            sold_ribbon = '<span class="catalog-card__sold-ribbon">Продано</span>' if is_sold else ""
-            data_status = "sold" if is_sold else "available"
 
             cards_html += f"""
-        <article class="catalog-card" data-status="{data_status}">
+        <article class="catalog-card" data-status="available">
           <a href="/ru/products/{f_name}.html" class="catalog-card__link">
             <div class="catalog-card__img-wrap">
               {thumb}
-              {sold_ribbon}
             </div>
             <div class="catalog-card__body">
               <h3 class="catalog-card__title">{title}</h3>
-              <p class="catalog-card__price">${price}</p>
+              <p class="catalog-card__price">{price} ₪</p>
             </div>
           </a>
         </article>"""
@@ -546,15 +550,16 @@ class GitHubConnector(BaseConnector):
         html = homepage.read_text(encoding="utf-8")
         # Replace content between the sentinel comments / inside #latest-products div
         new_block = (
-            '<div class="catalog-grid" id="latest-products">'
+            '<div class="catalog-grid">'
             + cards_html
             + "\n      </div>"
         )
         html = _re.sub(
-            r'<div class="catalog-grid" id="latest-products">.*?</div>',
-            new_block,
+            r'<div class="catalog-grid">.*?</div>(\s*</section>)',
+            new_block + r"\1",
             html,
             flags=_re.DOTALL,
+            count=1,
         )
         homepage.write_text(html, encoding="utf-8")
         logger.info("Updated RU homepage with %d latest products", len(latest))
