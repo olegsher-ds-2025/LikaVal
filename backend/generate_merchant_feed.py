@@ -36,11 +36,12 @@ BRAND_EN   = "Lika Val"
 BRAND_RU   = "Лика Вал"
 CONDITION  = "new"
 
-# Google Product Taxonomy IDs (full path strings used — IDs as comments)
+# Google Product Taxonomy — full path required (IDs as comments)
+# Verify paths at: https://www.google.com/basepages/producttype/taxonomy-with-ids.en-US.txt
 CATEGORY_BY_FOLDER = {
-    "20260216_100": "Home & Garden > Decor > Decorative Accents",       # 4166
-    "20260519_150": "Kitchen & Dining > Tableware > Serveware",          # 3574
-    "20260520_280": "Kitchen & Dining > Tableware > Drinkware > Mugs",   # 3577
+    "20260216_100": "Home & Garden > Decor > Decorative Accents",                           # 4166
+    "20260519_150": "Home & Garden > Kitchen & Dining > Tableware > Serveware",             # 3574
+    "20260520_280": "Home & Garden > Kitchen & Dining > Tableware > Drinkware > Mugs",      # 2920
 }
 DEFAULT_CATEGORY = "Home & Garden > Decor > Decorative Accents"
 
@@ -224,7 +225,7 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
                 "link":                  f"{SITE_URL}/en/products/{folder}.html",
                 "image_link":            image_link,
                 "additional_image_link": extra_images,
-                "price":                 f"{price_usd:.2f} USD",
+                "price":                 f"{price_ils:.2f} ILS",
                 "availability":          "in_stock",
                 "condition":             CONDITION,
                 "brand":                 BRAND_EN,
