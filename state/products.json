@@ -4,7 +4,7 @@
     "date": "2026-02-14",
     "price_ils": 250,
     "price_usd": 200,
-    "status": "available",
+    "status": "sold",
     "images": [
       "backend/downloads/20260214_250/IMG_7896.JPG",
       "backend/downloads/20260214_250/IMG_7898.JPG",
@@ -45,14 +45,14 @@
       "facebook": false
     },
     "created_at": "2026-05-18T17:09:59.423702+00:00",
-    "updated_at": "2026-05-18T18:36:07.009441+00:00"
+    "updated_at": "2026-06-09T08:03:28.467690+00:00"
   },
   "20260215_200": {
     "folder": "20260215_200",
     "date": "2026-02-15",
     "price_ils": 200,
     "price_usd": 160,
-    "status": "available",
+    "status": "sold",
     "images": [
       "backend/downloads/20260215_200/IMG_7913.JPG",
       "backend/downloads/20260215_200/IMG_7914.JPG",
@@ -93,14 +93,14 @@
       "facebook": false
     },
     "created_at": "2026-05-18T17:10:21.158554+00:00",
-    "updated_at": "2026-05-19T19:38:05.879133+00:00"
+    "updated_at": "2026-06-09T08:03:28.471382+00:00"
   },
   "20260216_200": {
     "folder": "20260216_200",
     "date": "2026-02-16",
     "price_ils": 200,
     "price_usd": 160,
-    "status": "available",
+    "status": "sold",
     "images": [
       "backend/downloads/20260216_200/IMG_7840.JPG",
       "backend/downloads/20260216_200/IMG_7841.JPG",
@@ -140,14 +140,14 @@
       "facebook": false
     },
     "created_at": "2026-05-18T17:10:44.626400+00:00",
-    "updated_at": "2026-05-18T18:36:07.010559+00:00"
+    "updated_at": "2026-06-09T08:03:28.474871+00:00"
   },
   "20260519-150": {
     "folder": "20260519-150",
     "date": "2026-05-19",
     "price_ils": 150,
     "price_usd": 120,
-    "status": "available",
+    "status": "sold",
     "images": [
       "backend/downloads/20260519-150/IMG_0869.JPG",
       "backend/downloads/20260519-150/IMG_0872.JPG",
@@ -187,7 +187,7 @@
       "facebook": false
     },
     "created_at": "2026-05-19T16:45:59.249429+00:00",
-    "updated_at": "2026-05-19T16:45:59.249429+00:00"
+    "updated_at": "2026-06-09T08:03:28.478371+00:00"
   },
   "20260519_150": {
     "folder": "20260519_150",
@@ -211,31 +211,32 @@
       "backend/downloads/20260519_150/IMG_0885.MOV"
     ],
     "ai": {
-      "title_en": "A Bowl of Bones",
-      "description_en": "This unique ceramic bowl is shaped like a bone with green leaves on top, giving it an intriguing and whimsical touch. The beige glaze adds to the earthy feel of this piece, making it perfect for holding small objects or serving as a decorative centerpiece.",
-      "title_ru": "Кубок из костей",
-      "description_ru": "Это уникальный керамический кубок, сделанный в виде кости с зелеными листьями на верхушке, что делает его интригующим и прикольно-фантастичным. Бежевый лак заполняет эту вещь земляной атмосферой, делая ее идеальной для хранения маленьких предметов или использования в качестве декоративного центровочного предмета.",
+      "title_en": "Handmade Ceramic Olive Dish",
+      "description_en": "This charming handmade ceramic dish infuses a touch of Mediterranean warmth and artisan soul into your home. Carefully crafted from natural clay, each piece features intricate olive branch designs and vibrant olive fruits, displaying the unique character and gentle imperfections associated with handmade pottery. Earthy tones combined with sunny yellow and olive green details create a rustic aesthetic reminiscent of countryside kitchens and slow living. A perfect addition to a farmhouse interior, this versatile piece also serves as an unique decorative element for everyday use.\n\nDetails:\n- Handmade ceramic dish\n- Hand-painted olive branch design\n- Glossy food-safe glaze\n- Unique artisan piece - no two are exactly alike\n- Rustic Mediterranean style\n\nMade with love and attention to detail for those who appreciate authentic handmade ceramics and cherish cozy home moments. ✨ 🫒💛",
+      "title_ru": "﻿Handmade Ceramic Olive Dish",
+      "description_ru": "This charming handmade ceramic dish brings a touch of Mediterranean warmth and artisan soul into your home. Carefully crafted from natural clay and hand-painted with delicate olive branches and vibrant olive fruits, each piece carries its own unique character and gentle imperfections that make handmade pottery so special. Soft earthy tones combined with sunny yellow and olive green details create a cozy rustic aesthetic inspired by countryside kitchens and slow living. A lovely addition to a farmhouse interior and a unique decorative piece for everyday use. ✨ Details: • Handmade ceramic dish • Hand-painted olive branch design • Glossy food-safe glaze • Unique artisan piece — no two are exactly alike • Rustic Mediterranean style Made with love and attention to detail for those who appreciate authentic handmade ceramics and cozy home moments 🫒💛",
       "seo_tags": [
-        "handmadeceramicbowl",
-        "uniquebonebowl",
-        "greenleafdecor",
-        "whimsicaltouch",
-        "beigeglaze",
-        "earthyfeel",
-        "smallobjectholder",
-        "decorativecenterpiece",
-        "intriguingdesign",
-        "ceramicartwork"
+        "handmade-ceramic",
+        "mediterranean-style",
+        "olive-branch-design",
+        "artisan-pottery",
+        "food-safe",
+        "unique-piece",
+        "rustic-aesthetic",
+        "farmhouse-interior",
+        "everyday-use",
+        "slow-living"
       ],
       "etsy_listing": "Title: Co Bones Plate - A Unique Handcrafted Ceramic Piece\n\nDescription: Introducing the Co Bones plate, a one-of-a-kind handmade ceramic piece that combines functionality with style. The plate features a charming tree design adorned with vibrant green leaves and delicate yellow fruit, adding an artistic touch to any dining experience. Crafted from high-quality clay, this Co Bones plate is both durable and aesthetically pleasing.\n\nThe tree depicted on the plate represents growth and resilience, making it not only a beautiful addition to your tableware collection but also a thoughtful gift for those who appreciate nature's beauty. The hand-painted design showcases the artist's attention to detail and skill in creating unique pieces that stand out from mass-produced alternatives.\n\nThis Co Bones plate is perfect for serving small appetizers or desserts, adding a touch of elegance to any gathering. Whether you choose it as a personal decoration or gift, this handcrafted ceramic piece will surely impress and inspire conversation among your guests.\n\nMaterials: The Co Bones plate is made from high-quality clay that has been fired and glazed for durability and a smooth finish.\n\nTags: Handmade Ceramic, Tree Design, Fruit Leaves, Dinnerware, Eco-Friendly, Artisan Craftsmanship, Unique Gifts, Home Decor, Sustainable Materials, Fine Pottery, Aesthetic Appeal.",
-      "social_post_ru": "\"ПРИВЕТ ВСЕМ🦊\nНу, чё ж, пришло время поделиться с вами одним из своих уникальных творений!🔥\nКубок из костей - это что-то вроде тайной фантастической сказки, которую я запечатал на вечные времена глиной и огнём.\nВиднеются листья зеленые на вершине, как будто кубок вырос прямо из земли🌱… А невероятно-бежевый лак придает ему уютную атмосферу земли.\nОн идеальен для хранения маленьких предметов, или как декоративный центровочный объект - в любом случае он будет добавлять вам неповторимый уют!🙌🏼\nИзготовление этот занимало много времени и сил, поэтому его цена не слишком низкая, но я гарантирую, что он стоит больше цены.😉\nЕсли кто-то заинтересовался - пишите мне, доступен для заказа!💌\"\nХэштеги: #керамика #искусство #уникальноетворение #петахтиквой #декоративныйобъект"
+      "social_post_ru": "\"ПРИВЕТ ВСЕМ🦊\nЧто-то у меня в руках есть настоящая дивочка🔥\nЭтот прекрасный декоративный блюдце из глины, созданное моими руками и сердцем. Его делают только люди истинных мастеров ремесла, как я, которые ценят каждый свой движений, чтобы создать что-то элегантное, но простое.\nНекоторые говорят, что глина — это самая чувствительная из материалов, которую я когда-либо использовала. Она требует определённого прикосновения, особой внимательности и пассии. И вот что мы получили: **\"Handmade Ceramic Olive Dish\"** 🌳✨\nЭто блюдце украшено легкими взглядом olive branch design и очень тонкими отпечатками ярких оливковых фруктов. Каждое изделие, которое вы создаёте, имеет свою неповторимую жизнь и характерную особенность, которые делают его настоящим шедевром.\nМы используем только лучшие виды глины и пигментов для того, чтобы создать чувство необычайной чистоты и точности в этом блюдце. Глазурь — это прозрачный и гладкий слой на поверхности, который защищает"
     },
     "published": {
       "github": false,
       "etsy": false,
       "facebook": false
     },
-    "updated_at": "2026-06-01T11:33:56.851554+00:00"
+    "updated_at": "2026-06-09T08:08:36.905181+00:00",
+    "pending_text": false
   },
   "20260520_280": {
     "folder": "20260520_280",
@@ -304,30 +305,32 @@
       "backend/downloads/20260216_100/IMG_7892.mov"
     ],
     "ai": {
-      "title_en": "A Handcrafted Bird Soap Dish",
-      "description_en": "The bird soap dish is a beautiful piece of handmade ceramics, with a smooth glazed surface that feels gentle to the touch. Its unique shape and intricate design make it a perfect addition to any bathroom or home spa setting, providing both style and functionality in one elegant package.",
-      "title_ru": "Ручной декоративный блюдце для мыла птицей",
-      "description_ru": "Блюдце для мыла птицей - это прекрасное ручное изделие из керамики, с гладким покрытием глазурью, которое касаясь, дает чувство удобства. Его уникальная форма и детальный дизайн делают его идеальным дополнением для любой ванной комнаты или домашней спа-зоны, обеспечивая как стиль, так и функциональность в одном элегантном пакете.",
+      "title_en": "Little Forest Owl Whistle - Handmade Ceramic Orb",
+      "description_en": "In a quiet forest where the moonlight pierces through branches and old trees whisper their secrets, lives a tiny owl guardian. This miniature hand-crafted and hand-painted ceramic owlet is so small it easily fits in a pocket, ready to accompany its owner on daily adventures, reminding one of the importance of curiosity, attentiveness, and the ability to see wonders around. Its golden eyes seem to hold the wisdom of the forest, while the soft whistle brings a piece of nature with it. Just blow gently into it - imagine forest paths, the rustling of leaves, and quiet evenings under a starry sky. Each owlet is hand-crafted, so each one has its own character. Two perfectly identical guardians do not exist.\n✨ Handmade ceramic ✨ Hand-painted details ✨ Real whistle ✨ Miniature pocket companion ✨ Unique collectible piece Perfect gift for owl lovers, nature enthusiasts, collectors, dreamers, and all who believe that there is still a place for small magic in daily life. Let this tiny forest guardian settle next to you and become your adventure companion.",
+      "title_ru": "﻿Маленькая лесная сова-свистулька — керамический спутник ручной работы",
+      "description_ru": "Где-то в тихом лесу, где лунный свет пробивается сквозь ветви, а старые деревья шепчут свои тайны, живёт маленькая сова-хранительница. Эта миниатюрная керамическая совушка была с любовью вылеплена и расписана вручную. Она настолько мала, что легко помещается в кармане и готова сопровождать своего хозяина в повседневных приключениях, напоминая о том, как важно сохранять любопытство, внимательность и способность видеть чудеса вокруг. Её золотистые глаза словно хранят мудрость леса, а мягкий голос свистульки приносит с собой частичку природы. Стоит лишь слегка подуть в неё — и можно представить лесные тропинки, шелест листвы и тихие вечера под звёздным небом. Каждая совушка создаётся вручную, поэтому каждая обладает собственным характером. Двух совершенно одинаковых хранительниц не существует. ✨ Ручная работа из керамики ✨ Ручная роспись ✨ Настоящая свистулька ✨ Миниатюрный карманный спутник ✨ Уникальный коллекционный экземпляр Прекрасный подарок для любителей сов, природы, коллекционеров, мечтателей и всех, кто верит, что в повседневной жизни всё ещё есть место маленькому волшебству. Пусть эта крошечная хранительница леса поселится рядом с вами и станет спутницей ваших приключений.",
       "seo_tags": [
-        "handmade-ceramics",
-        "bird-soap-dish",
-        "smooth-glazed",
-        "gentle-touch",
-        "bathroom-decor",
-        "home-spa",
-        "unique-design",
-        "intricate",
-        "style",
-        "functionality"
+        "handmade ceramic",
+        "hand-painted details",
+        "real whistle",
+        "miniature pocket companion",
+        "unique collectible piece",
+        "owl lovers",
+        "nature enthusiasts",
+        "collectors",
+        "dreamers",
+        "daily life companion",
+        "tiny forest guardian"
       ],
       "etsy_listing": "Title: Bird Soap Dish - Handcrafted Ceramic Soap Dish for Sale on Etsy!\n\nDescription: This handmade ceramic soap dish features a charming black bird design that will add a touch of elegance to your bathroom or home. The bird is beautifully crafted with intricate details, including its feathers and beak. Made from high-quality materials, this dish can hold multiple bars of soap, keeping them organized and within reach.\n\nOur artisan has put in a lot of effort into creating each piece, ensuring that they are unique and one-of-a-kind. The soaps inside the dish will not only serve their purpose but also act as an eye-catching decoration for your space. The dish is glazed with a non-slip surface to ensure easy use while adding an extra layer of protection against water damage.\n\nEvery purchase comes with a certificate of authenticity and a care guide on how to keep your soap dish looking great for years to come. Our bird soap dish makes for a thoughtful, stylish gift option that will be cherished by the recipient.\n\nMaterials: Ceramic, Glaze, Soap Pads (Simply place your favorite soaps inside).\n\nTags: handmade ceramics, soap dish, black bird design, eco-friendly, non-slip surface, glazed, bathroom decor, artisan crafted, unique gift.",
-      "social_post_ru": "\"ПРИВЕТ ВСЕМ🦊\nДа здравствует новое изделие моей руки - блюдце для мыла птицей! 🐤\n\nЯ сделала его именно для тех, кто ценит красоту и удобство. Оно выглядит так, будто быстро полетела в него птица и залилась вода, чтобы очистить свою лапину🐦\n\nМоя любимая маааленькая глина, подружка мне всегда и всегда приходится в помощь. И для этого блюдца она была отвечабельна! Глазурь гладко плавится на поверхности керамики и дает ощущение неотразимости 😍\n\nКасаясь блюдца, ты чувствуешь только удобство - это дело рук мастера! Блюдце выглядит так, что кажется, его можно легко схватить и не заплести в пальцы.\n\nУникальная форма блюдца и детальный дизайн превращают его в то, чего ты не найдешь ни у кого другом - он идеально подходит для любой вашей ванной комнаты или домашней спа-зоны. Как стиль, так и функциональность соединены в одном элегантном пакете 🎁\n\nЦена - ооочень приятная для гла"
+      "social_post_ru": "«ПРИВЕТ ВСЕМ🦊\nСейчас покажу вам что-то чудесно взрослое, но все же маленькое и поэтому особенное. Это — **Маленькая лесная сова-свистулька** — керамический спутник ручной работы 🦉✨\n\nГде-то в тихом лесу, где лунный свет пробивается сквозь ветви, а старые деревья шепчут свои тайны, живёт маленькая сова-хранительница. Эту миниатюрную керамическую совушку создали руками моих любимых учениц — с любовью вылепили, а потом расписали. Она настолько мала, что легко помещается в кармане и готова сопровождать своего хозяина в повседневных приключениях 🎒\n\nЕё золотистые глаза словно хранят мудрость леса, а мягкий голос свистульки приносит с собой частичку природы. Стоит лишь слегка подуть в нею — и можно представить лесные тропинки, шелест листвы и тихие вечера под звёздным небом. Каждая совушка создаётся вручную, поэтому каждая обладает собственным характером ❤️"
     },
     "published": {
       "github": false,
       "etsy": false,
       "facebook": false
     },
-    "updated_at": "2026-06-01T11:26:01.966092+00:00"
+    "updated_at": "2026-06-09T08:07:03.993936+00:00",
+    "pending_text": false
   }
 }
