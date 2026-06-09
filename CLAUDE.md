@@ -69,6 +69,8 @@ Local GPU at `http://10.0.0.20:11434`. Use for RAG and embedding-heavy tasks —
 - `/project:check-state` — Inspect current state of products.json and sync_log.json
 - `/project:etsy-sync` — Force-sync products to Etsy via MCP or etsy_connector
 - `/project:rag-query` — Run a RAG query against product catalog or writing styles using the Jetson GPU
+- `/project:seo-refresh` — Audit and refresh SEO metadata, titles, descriptions, hreflang, sitemap for www.likaval.com
+- `/project:merchant-publish` — Regenerate, validate, and upload EN+RU Google Merchant Center TSV feeds for Israel
 
 ## Environment Variables (key ones)
 
