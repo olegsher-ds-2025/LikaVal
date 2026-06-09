@@ -149,6 +149,33 @@ def _parse_structured(text: str, title_key: str, desc_key: str) -> tuple[str, st
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def translate_to_english(title_ru: str, description_ru: str) -> dict:
+    """Translate Russian title and description to English using the text model.
+
+    Returns dict with keys: title_en, description_en. Empty strings on failure.
+    """
+    try:
+        logger.info("Translating RU→EN via %s...", _TEXT_MODEL)
+        raw = _chat(
+            user_message=(
+                f"Translate to English:\n"
+                f"НАЗВАНИЕ: {title_ru}\n"
+                f"ОПИСАНИЕ: {description_ru}\n\n"
+                f"Answer strictly in this format:\n"
+                f"TITLE: ...\n"
+                f"DESCRIPTION: ..."
+            ),
+            system="You are a professional translator. Translate accurately to English only. Keep the same structure.",
+            num_predict=500,
+        )
+        title_en, desc_en = _parse_structured(raw, "TITLE", "DESCRIPTION")
+        logger.info("RU→EN translation done — title_en=%s", (title_en or "")[:60])
+        return {"title_en": title_en, "description_en": desc_en}
+    except Exception as exc:
+        logger.error("RU→EN translation failed: %s", exc)
+        return {"title_en": "", "description_en": ""}
+
+
 def translate_to_russian(title_en: str, description_en: str) -> dict:
     """Translate English title and description to Russian using the text model.
 
