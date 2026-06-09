@@ -2,171 +2,155 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
 
-  <!-- Homepage (redirects to /ru/) -->
+  <!-- Root redirect -->
   <url>
-    <loc>https://likaval.com/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/"/>
   </url>
 
-  <!-- Russian — primary language -->
+  <!-- Homepages -->
   <url>
-    <loc>https://likaval.com/ru/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/ru/</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://likaval.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/"/>
   </url>
-
   <url>
-    <loc>https://likaval.com/ru/workshops.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/workshops.html"/>
-  </url>
-
-  <url>
-    <loc>https://likaval.com/ru/kruzhok.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/kruzhok.html"/>
-  </url>
-
-  <url>
-    <loc>https://likaval.com/ru/catalog.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/en/</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/catalog.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://likaval.com/en/catalog.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/"/>
   </url>
 
+  <!-- Catalog -->
   <url>
-    <loc>https://likaval.com/ru/workshop-standard.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/ru/catalog.html</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/catalog.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/catalog.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/catalog.html"/>
+  </url>
+  <url>
+    <loc>https://www.likaval.com/en/catalog.html</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/catalog.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/catalog.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/catalog.html"/>
+  </url>
+
+  <!-- Workshops (RU only) -->
+  <url>
+    <loc>https://www.likaval.com/ru/workshops.html</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/workshops.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/workshops.html"/>
+  </url>
+  <url>
+    <loc>https://www.likaval.com/ru/workshop-standard.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/workshop-standard.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/workshop-standard.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/workshop-standard.html"/>
   </url>
-
   <url>
-    <loc>https://likaval.com/ru/workshop-silver.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/ru/workshop-silver.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/workshop-silver.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/workshop-silver.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/workshop-silver.html"/>
   </url>
-
   <url>
-    <loc>https://likaval.com/ru/workshop-gold.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/ru/workshop-gold.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/workshop-gold.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/workshop-gold.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/workshop-gold.html"/>
+  </url>
+  <url>
+    <loc>https://www.likaval.com/ru/kruzhok.html</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/kruzhok.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/kruzhok.html"/>
   </url>
 
-  <!-- RU product pages -->
+  <!-- Return policy -->
   <url>
-    <loc>https://likaval.com/ru/products/20260520_280.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://www.likaval.com/ru/return-policy.html</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/return-policy.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/return-policy.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/return-policy.html"/>
   </url>
   <url>
-    <loc>https://likaval.com/ru/products/20260519-150.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/ru/products/20260216_200.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/ru/products/20260216_100.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/ru/products/20260215_200.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/ru/products/20260214_250.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://www.likaval.com/en/return-policy.html</loc>
+    <lastmod>2026-06-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/return-policy.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/return-policy.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/return-policy.html"/>
   </url>
 
-  <!-- English — secondary language -->
+  <!-- Active product pages only (sold pages carry noindex and are excluded here) -->
   <url>
-    <loc>https://likaval.com/en/</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/ru/products/20260520_280.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://likaval.com/en/"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://likaval.com/ru/"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260520_280.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/products/20260520_280.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260520_280.html"/>
   </url>
-
   <url>
-    <loc>https://likaval.com/en/catalog.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://likaval.com/en/shop.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/en/products/20260520_280.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-
-  <!-- EN product pages -->
-  <url>
-    <loc>https://likaval.com/en/products/20260520_280.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/products/20260520_280.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260520_280.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260520_280.html"/>
   </url>
   <url>
-    <loc>https://likaval.com/en/products/20260519-150.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/ru/products/20260216_100.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260216_100.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/products/20260216_100.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260216_100.html"/>
   </url>
   <url>
-    <loc>https://likaval.com/en/products/20260216_200.html</loc>
-    <lastmod>2026-06-02</lastmod>
+    <loc>https://www.likaval.com/en/products/20260216_100.html</loc>
+    <lastmod>2026-06-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/en/products/20260216_100.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/en/products/20260215_200.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://likaval.com/en/products/20260214_250.html</loc>
-    <lastmod>2026-06-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
+    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/products/20260216_100.html"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260216_100.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260216_100.html"/>
   </url>
 
 </urlset>

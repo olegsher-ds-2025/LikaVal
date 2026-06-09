@@ -16,6 +16,15 @@ from backend.src.connectors.base import BaseConnector
 
 logger = logging.getLogger(__name__)
 
+SITE_BASE = "https://www.likaval.com"
+
+
+def _seo_title(title: str, max_chars: int = 48) -> str:
+    """Truncate a long product title to fit within Google's ~60-char display limit."""
+    if len(title) <= max_chars:
+        return title
+    return title[:max_chars].rsplit(" ", 1)[0].rstrip(".,;:—–") + "…"
+
 
 class GitHubConnector(BaseConnector):
     name = "github"
@@ -97,14 +106,23 @@ class GitHubConnector(BaseConnector):
             price_ils = product.get("price_ils", "")
             price_usd = product.get("price_usd", "")
             tags = ai.get("seo_tags", [])
-            canonical_url = f"https://likaval.com/{lang}/products/{folder}.html"
-            og_image_url  = f"https://likaval.com/assets/products/{folder}/{first_img_name}"
+            canonical_url = f"{SITE_BASE}/{lang}/products/{folder}.html"
+            og_image_url  = f"{SITE_BASE}/assets/products/{folder}/{first_img_name}"
             schema_avail  = "https://schema.org/OutOfStock" if is_sold else "https://schema.org/InStock"
+            alt_lang      = "ru" if lang == "en" else "en"
+            alt_url       = f"{SITE_BASE}/{alt_lang}/products/{folder}.html"
+            hreflang_html = (
+                f'  <link rel="alternate" hreflang="{lang}" href="{canonical_url}">\n'
+                f'  <link rel="alternate" hreflang="{alt_lang}" href="{alt_url}">\n'
+                f'  <link rel="alternate" hreflang="x-default" href="{SITE_BASE}/ru/products/{folder}.html">\n'
+            )
+            noindex_tag = '  <meta name="robots" content="noindex, follow">\n' if is_sold else ""
 
             if lang == "en":
                 site_name      = "LikaVal Ceramics"
-                site_title_tag = f"{title} — Handmade Ceramics Petah Tikva | LikaVal"
-                meta_desc      = f"{title}. Handmade ceramic art from Petah Tikva, Israel. {description[:100]}"
+                _short         = _seo_title(title)
+                site_title_tag = f"{_short} | LikaVal Ceramics"
+                meta_desc      = f"{_short}. Handmade ceramic art from Petah Tikva, Israel. {description[:100]}"
                 og_locale      = "en_US"
                 catalog_label  = "Catalog"
                 craft_note     = "Handmade · One of a kind"
@@ -125,8 +143,9 @@ class GitHubConnector(BaseConnector):
                 keywords       = ", ".join(tags)
             else:
                 site_name      = "Лика Вал | Керамика"
-                site_title_tag = f"{title} — авторская керамика ручной работы, Петах-Тиква | Лика Вал"
-                meta_desc      = f"{title} — авторская керамика ручной работы из Петах-Тиквы. {description[:100]}"
+                _short         = _seo_title(title)
+                site_title_tag = f"{_short} | Лика Вал · Керамика"
+                meta_desc      = f"{_short} — авторская керамика из Петах-Тиквы. {description[:110]}"
                 og_locale      = "ru_RU"
                 catalog_label  = "Каталог"
                 craft_note     = "Ручная работа · Единственный экземпляр"
@@ -204,7 +223,7 @@ class GitHubConnector(BaseConnector):
   <meta name="description" content="{meta_desc[:160]}">
   <meta name="keywords" content="{keywords}">
   <link rel="canonical" href="{canonical_url}">
-  <meta property="og:type" content="product">
+{hreflang_html}{noindex_tag}  <meta property="og:type" content="product">
   <meta property="og:title" content="{title}">
   <meta property="og:description" content="{meta_desc[:160]}">
   <meta property="og:image" content="{og_image_url}">
@@ -415,6 +434,9 @@ class GitHubConnector(BaseConnector):
         </a>
       </article>"""
 
+            _cat_canonical = f"{SITE_BASE}/{lang}/catalog.html"
+            _cat_alt_lang  = "ru" if lang == "en" else "en"
+            _cat_alt_url   = f"{SITE_BASE}/{_cat_alt_lang}/catalog.html"
             catalog_html = f"""<!DOCTYPE html>
 <html lang="{lang}">
 <head>
@@ -422,6 +444,10 @@ class GitHubConnector(BaseConnector):
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{catalog_label} — {site_name}</title>
   <meta name="description" content="{shop_tagline}">
+  <link rel="canonical" href="{_cat_canonical}">
+  <link rel="alternate" hreflang="{lang}" href="{_cat_canonical}">
+  <link rel="alternate" hreflang="{_cat_alt_lang}" href="{_cat_alt_url}">
+  <link rel="alternate" hreflang="x-default" href="{SITE_BASE}/ru/catalog.html">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>

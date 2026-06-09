@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://likaval.com/sitemap.xml
+Sitemap: https://www.likaval.com/sitemap.xml
