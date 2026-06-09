@@ -266,15 +266,26 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
                 "color":                 "",
             })
 
+    def _clean(row: dict) -> dict:
+        """Strip newlines/tabs from every field — TSV cannot contain them unescaped."""
+        return {
+            k: re.sub(r"[\t\n\r]+", " ", str(v)).strip()
+            for k, v in row.items()
+        }
+
     # Write TSV files
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for lang, rows in (("en", rows_en), ("ru", rows_ru)):
         out = output_dir / f"merchant_feed_{lang}.tsv"
         with open(out, "w", encoding="utf-8", newline="") as fh:
-            writer = csv.DictWriter(fh, fieldnames=COLUMNS, delimiter="\t")
+            writer = csv.DictWriter(
+                fh, fieldnames=COLUMNS, delimiter="\t",
+                quoting=csv.QUOTE_NONE, escapechar="\\",
+            )
             writer.writeheader()
-            writer.writerows(rows)
+            for row in rows:
+                writer.writerow(_clean(row))
         logger.info("Wrote %s (%d product(s)): %s", out.name, len(rows), out)
 
 
