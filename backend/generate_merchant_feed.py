@@ -45,6 +45,14 @@ CATEGORY_BY_FOLDER = {
 }
 DEFAULT_CATEGORY = "Home & Garden > Decor > Decorative Accents"
 
+# Brutto (packaged) shipping weight in kg — update when measured
+WEIGHT_BY_FOLDER: dict[str, str] = {
+    "20260216_100": "0.15 kg",   # owl whistle
+    "20260519_150": "0.45 kg",   # olive dish
+    "20260520_280": "0.55 kg",   # owl mug
+}
+DEFAULT_WEIGHT = ""
+
 # TSV columns in spec order
 COLUMNS = [
     "id",
@@ -62,6 +70,7 @@ COLUMNS = [
     "mpn",
     "material",
     "color",
+    "shipping_weight",
 ]
 
 
@@ -204,6 +213,7 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
         )
 
         category = CATEGORY_BY_FOLDER.get(folder, DEFAULT_CATEGORY)
+        weight   = WEIGHT_BY_FOLDER.get(folder, DEFAULT_WEIGHT)
         material = "ceramic, clay, glaze"
 
         # ── English row ────────────────────────────────────────────────────
@@ -234,6 +244,7 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
                 "mpn":                   folder,
                 "material":              material,
                 "color":                 "",
+                "shipping_weight":       weight,
             })
 
         # ── Russian row ────────────────────────────────────────────────────
@@ -264,6 +275,7 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
                 "mpn":                   folder,
                 "material":              "керамика, глина, глазурь",
                 "color":                 "",
+                "shipping_weight":       weight,
             })
 
     def _clean(row: dict) -> dict:
