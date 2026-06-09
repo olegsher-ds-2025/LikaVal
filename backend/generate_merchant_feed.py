@@ -278,12 +278,23 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
                 "shipping_weight":       weight,
             })
 
+    _EMOJI_RE = re.compile(
+        "["
+        "\U0001F300-\U0001FAFF"  # pictographs, symbols, transport, food, etc.
+        "\U00002600-\U000027BF"  # misc symbols (✨ U+2728) and dingbats
+        "\U0000FE00-\U0000FE0F"  # variation selectors (emoji modifiers)
+        "\U0001F1E0-\U0001F1FF"  # regional indicator letters (flags)
+        "]+",
+        flags=re.UNICODE,
+    )
+
     def _clean(row: dict) -> dict:
-        """Strip newlines/tabs from every field — TSV cannot contain them unescaped."""
-        return {
-            k: re.sub(r"[\t\n\r]+", " ", str(v)).strip()
-            for k, v in row.items()
-        }
+        """Strip emojis, newlines, and tabs — none are allowed in Merchant Center TSV."""
+        def sanitize(v: str) -> str:
+            v = _EMOJI_RE.sub("", v)          # remove emoji
+            v = re.sub(r"[\t\n\r]+", " ", v)  # flatten newlines
+            return re.sub(r" {2,}", " ", v).strip()  # collapse double spaces
+        return {k: sanitize(str(v)) for k, v in row.items()}
 
     # Write TSV files
     output_dir.mkdir(parents=True, exist_ok=True)
