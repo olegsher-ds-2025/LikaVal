@@ -59,37 +59,61 @@ def _export_gdoc(service, file_id: str) -> str:
     return (raw.decode("utf-8") if isinstance(raw, bytes) else raw).strip()
 
 
+def _extract_title_desc(block: str, title_keys: list, desc_keys: list) -> tuple[str, str]:
+    """Extract title + description from a text block.
+
+    Tries labeled keys first (e.g. 'Название:', 'Title:').
+    Falls back to first non-empty line = title, rest joined = description.
+    """
+    for tk in title_keys:
+        m_t = re.search(rf"^{re.escape(tk)}\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
+        if m_t:
+            title = m_t.group(1).strip()
+            desc = ""
+            for dk in desc_keys:
+                m_d = re.search(rf"^{re.escape(dk)}\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
+                if m_d:
+                    desc = m_d.group(1).strip()
+                    break
+            return title, desc
+
+    # No label — first non-empty line is title, rest is description
+    lines = [l.strip() for l in block.splitlines() if l.strip()]
+    if not lines:
+        return "", ""
+    return lines[0], " ".join(lines[1:])
+
+
 def _parse_text(text: str) -> dict:
     """Parse description text into {title_en, description_en, title_ru, description_ru}.
 
     Handles three formats in priority order:
-      1. EN:/RU: section blocks  (same as description.txt)
-      2. Labelled keys  (Название: … / Описание: … or Title: … / Description: …)
+      1. EN:/RU: section blocks — with or without Название:/Title: labels inside,
+         and with optional BOM or section at position 0
+      2. Labelled keys only  (Название:… / Описание:… or Title:… / Description:…)
       3. Freeform Russian  (first non-empty line = title, rest = description)
     """
     result: dict = {"title_en": "", "description_en": "", "title_ru": "", "description_ru": ""}
 
+    # Normalise: strip BOM, CRLF→LF, prepend \n so a section header at position 0 is detected
+    text = text.lstrip("﻿").replace("\r\n", "\n").replace("\r", "\n")
+    normalized = "\n" + text
+
     # Format 1 – EN:/RU: section blocks
-    if re.search(r"\n\s*(EN|RU)\s*:\s*\n", text, re.IGNORECASE):
-        parts = re.split(r"\n\s*(EN|RU)\s*:\s*\n", text, flags=re.IGNORECASE)
+    if re.search(r"\n\s*(EN|RU)\s*:\s*\n", normalized, re.IGNORECASE):
+        parts = re.split(r"\n\s*(EN|RU)\s*:\s*\n", normalized, flags=re.IGNORECASE)
         i = 1
         while i + 1 < len(parts):
             lang = parts[i].strip().upper()
-            block = parts[i + 1]
+            block = parts[i + 1].strip()
             if lang == "EN":
-                m_t = re.search(r"^Title\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
-                m_d = re.search(r"^Description\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
-                if m_t:
-                    result["title_en"] = m_t.group(1).strip()
-                if m_d:
-                    result["description_en"] = m_d.group(1).strip()
+                result["title_en"], result["description_en"] = _extract_title_desc(
+                    block, ["Title"], ["Description"]
+                )
             elif lang == "RU":
-                m_t = re.search(r"^(?:Title|Название)\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
-                m_d = re.search(r"^(?:Description|Описание)\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
-                if m_t:
-                    result["title_ru"] = m_t.group(1).strip()
-                if m_d:
-                    result["description_ru"] = m_d.group(1).strip()
+                result["title_ru"], result["description_ru"] = _extract_title_desc(
+                    block, ["Название", "Title"], ["Описание", "Description"]
+                )
             i += 2
         return result
 
@@ -185,57 +209,75 @@ def sync() -> None:
             log_error(folder_name, f"Description fetch/parse failed: {exc}")
             continue
 
-        title_ru = parsed.get("title_ru", "").strip()
-        desc_ru  = parsed.get("description_ru", "").strip()
-        title_en = parsed.get("title_en", "").strip()
-        desc_en  = parsed.get("description_en", "").strip()
+        # Languages as provided by the doc (before any translation)
+        title_ru_src = parsed.get("title_ru", "").strip()
+        desc_ru_src  = parsed.get("description_ru", "").strip()
+        title_en_src = parsed.get("title_en", "").strip()
+        desc_en_src  = parsed.get("description_en", "").strip()
 
-        if not title_ru and not title_en:
+        if not title_ru_src and not title_en_src:
             logger.warning("No usable title in description for %s — skipping", folder_name)
             continue
 
-        # Translate missing language
+        # ── Detect changes BEFORE translation ────────────────────────────────
+        # Compare only the source languages the doc actually provides so that a
+        # non-deterministic Ollama translation never triggers a spurious re-run.
+        existing     = products.get(folder_name, {})
+        prev_ai      = existing.get("ai", {})
+        drive_status = "sold" if meta["is_sold"] else "available"
+        status_changed = existing.get("status") != drive_status
+
+        source_changed = (
+            (bool(title_ru_src) and (
+                prev_ai.get("title_ru") != title_ru_src
+                or prev_ai.get("description_ru") != desc_ru_src))
+            or (bool(title_en_src) and (
+                prev_ai.get("title_en") != title_en_src
+                or prev_ai.get("description_en") != desc_en_src))
+        )
+        missing_translation = (
+            (bool(title_ru_src) and not prev_ai.get("title_en"))
+            or (bool(title_en_src) and not prev_ai.get("title_ru"))
+        )
+
+        if not source_changed and not missing_translation and not status_changed:
+            logger.info("No change for %s — skipping", folder_name)
+            continue
+
+        # ── Resolve final title/desc with translation ─────────────────────────
+        title_ru, desc_ru = title_ru_src, desc_ru_src
+        title_en, desc_en = title_en_src, desc_en_src
+
         if title_ru and not title_en:
-            if ollama_ok:
+            if not source_changed and prev_ai.get("title_en"):
+                # Source unchanged — reuse stored translation
+                title_en = prev_ai["title_en"]
+                desc_en  = prev_ai.get("description_en", "")
+            elif ollama_ok:
                 logger.info("RU-only doc → translating RU→EN for %s", folder_name)
                 t = translate_to_english(title_ru, desc_ru)
                 title_en, desc_en = t["title_en"], t["description_en"]
             else:
                 logger.warning("Ollama unavailable — EN translation skipped for %s", folder_name)
         elif title_en and not title_ru:
-            if ollama_ok:
+            if not source_changed and prev_ai.get("title_ru"):
+                title_ru = prev_ai["title_ru"]
+                desc_ru  = prev_ai.get("description_ru", "")
+            elif ollama_ok:
                 logger.info("EN-only doc → translating EN→RU for %s", folder_name)
                 t = translate_to_russian(title_en, desc_en)
                 title_ru, desc_ru = t["title_ru"], t["description_ru"]
             else:
                 logger.warning("Ollama unavailable — RU translation skipped for %s", folder_name)
 
-        # Compare with current state to detect real changes
-        existing = products.get(folder_name, {})
-        prev_ai  = existing.get("ai", {})
-        content_changed = (
-            prev_ai.get("title_ru")       != title_ru
-            or prev_ai.get("description_ru") != desc_ru
-            or prev_ai.get("title_en")       != title_en
-            or prev_ai.get("description_en") != desc_en
-        )
-
-        # Also re-render if status changed (e.g. folder renamed to _sold in Drive)
-        drive_status = "sold" if meta["is_sold"] else "available"
-        status_changed = existing.get("status") != drive_status
-
-        if not content_changed and not status_changed:
-            logger.info("No change for %s — skipping", folder_name)
-            continue
-
-        # Generate SEO tags and social post when content is fresh or was empty
+        # ── SEO tags and social post ──────────────────────────────────────────
         seo_tags       = prev_ai.get("seo_tags", [])
         social_post_ru = prev_ai.get("social_post_ru", "")
 
-        if ollama_ok and (content_changed or not seo_tags):
+        if ollama_ok and (source_changed or not seo_tags):
             seo_tags = generate_seo_tags(desc_en or desc_ru)
 
-        if ollama_ok and (content_changed or not social_post_ru):
+        if ollama_ok and (source_changed or not social_post_ru):
             ratio     = float(CONFIG["currency"]["ils_to_usd_ratio"])
             price_usd = existing.get("price_usd") or round(meta["price_ils"] * ratio)
             social_post_ru = generate_social_post_ru({
@@ -249,7 +291,7 @@ def sync() -> None:
                 },
             })
 
-        # Build updated product record
+        # ── Persist ──────────────────────────────────────────────────────────
         ratio     = float(CONFIG["currency"]["ils_to_usd_ratio"])
         price_ils = meta["price_ils"]
         price_usd = round(price_ils * ratio)
@@ -276,8 +318,8 @@ def sync() -> None:
 
         upsert_product(folder_name, product_data)
         changed_folders.append(folder_name)
-        logger.info("Updated state for %s (content_changed=%s, status_changed=%s)",
-                    folder_name, content_changed, status_changed)
+        logger.info("Updated state for %s (source_changed=%s, missing_translation=%s, status_changed=%s)",
+                    folder_name, source_changed, missing_translation, status_changed)
 
     # ── Step 3: re-render GitHub pages ───────────────────────────────────────
     if not changed_folders:
