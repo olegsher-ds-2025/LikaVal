@@ -1,13 +1,14 @@
 # LikaVal configuration
 # Override any value via environment variable or .env file.
 
-ollama:
-  host: "${OLLAMA_HOST:http://10.0.0.20:11434}"
-  model: "${OLLAMA_MODEL:llava-phi3}"
-  text_model: "${OLLAMA_TEXT_MODEL:mistral:7b}"  # text-only model for translation/cleanup
+llm:
+  vision_url: "${LLM_VISION_URL:http://10.0.0.20:8001}"  # llama-server serving the vision GGUF
+  text_url: "${LLM_TEXT_URL:http://10.0.0.20:8002}"       # llama-server serving the text GGUF
   timeout: 180  # seconds — vision inference is slower
-  text_timeout: 300  # seconds — text-only calls; qwen2.5 needs ~2min to load + generate
+  text_timeout: 300  # seconds — text-only calls; larger models need ~2min to load + generate
   vision_frames: 3   # frames to extract from video for analysis
+  max_retries: 3
+  retry_backoff_seconds: 1.5
   prompts:
     summary_en: >
       You are a copywriter for a handmade ceramics brand.

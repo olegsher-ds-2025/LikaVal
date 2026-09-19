@@ -25,7 +25,7 @@ from backend.src.config import CONFIG
 from backend.src.state_manager import load_products, upsert_product
 from backend.src.ai_module import (
     translate_to_russian, translate_to_english,
-    check_ollama_health, _chat,
+    check_llm_health, _chat,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -86,7 +86,7 @@ def _short_title(text: str, max_len: int = 150) -> str:
 
 
 def _generate_short_title(title: str, description: str, lang: str, ollama_ok: bool) -> str:
-    """Ask Ollama to write a concise merchant product title (max 10 words)."""
+    """Ask the LLM to write a concise merchant product title (max 10 words)."""
     if not ollama_ok:
         return _short_title(title)
 
@@ -147,7 +147,7 @@ def _fix_ru_translation(folder: str, product: dict, ollama_ok: bool) -> dict:
             else:
                 logger.warning("Translation produced non-Cyrillic result for %s — skipping fix", folder)
         else:
-            logger.warning("Ollama unavailable — cannot fix RU translation for %s", folder)
+            logger.warning("LLM unavailable — cannot fix RU translation for %s", folder)
     return product
 
 
@@ -313,7 +313,7 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
 
 
 if __name__ == "__main__":
-    ollama_ok = check_ollama_health()
-    logger.info("Ollama reachable: %s", ollama_ok)
+    ollama_ok = check_llm_health()
+    logger.info("LLM reachable: %s", ollama_ok)
     build_feeds(Path("frontend"), ollama_ok)
     logger.info("Done")

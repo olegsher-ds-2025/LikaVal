@@ -12,3 +12,4 @@ services:
       - ./backend/downloads:/app/backend/downloads  # temporary media
     environment:
       - PYTHONUNBUFFERED=1
+    mem_limit: 512m

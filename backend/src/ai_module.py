@@ -1,7 +1,8 @@
 """AI content generation module.
 
-Communicates with a local Ollama instance to generate product content
-from images and video frames. All prompts are configurable via config/config.yaml.
+Communicates with llama.cpp (`llama-server`, OpenAI-compatible API) instances
+on the Jetson to generate product content from images and video frames.
+All prompts are configurable via config/config.yaml.
 
 For each product the module produces:
   - title_en / description_en   — English title + description
@@ -18,6 +19,7 @@ import logging
 import re
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 import requests
@@ -26,13 +28,14 @@ from backend.src.config import CONFIG
 
 logger = logging.getLogger(__name__)
 
-_OLLAMA_HOST = CONFIG["ollama"]["host"].rstrip("/")
-_MODEL = CONFIG["ollama"]["model"]
-_TEXT_MODEL = CONFIG["ollama"].get("text_model", _MODEL)
-_TIMEOUT = int(CONFIG["ollama"]["timeout"])
-_TEXT_TIMEOUT = int(CONFIG["ollama"].get("text_timeout", 60))
-_PROMPTS = CONFIG["ollama"]["prompts"]
-_VISION_FRAMES: int = int(CONFIG["ollama"].get("vision_frames", 3))
+_VISION_URL = CONFIG["llm"]["vision_url"].rstrip("/")
+_TEXT_URL = CONFIG["llm"]["text_url"].rstrip("/")
+_TIMEOUT = int(CONFIG["llm"]["timeout"])
+_TEXT_TIMEOUT = int(CONFIG["llm"].get("text_timeout", 60))
+_PROMPTS = CONFIG["llm"]["prompts"]
+_VISION_FRAMES: int = int(CONFIG["llm"].get("vision_frames", 3))
+_MAX_RETRIES: int = int(CONFIG["llm"].get("max_retries", 3))
+_RETRY_BACKOFF: float = float(CONFIG["llm"].get("retry_backoff_seconds", 1.5))
 
 
 # ── Media helpers ─────────────────────────────────────────────────────────────
@@ -86,45 +89,50 @@ def _collect_vision_inputs(images: list[Path], videos: list[Path]) -> list[Path]
     return selected
 
 
-# ── Ollama API ────────────────────────────────────────────────────────────────
+# ── llama.cpp API (OpenAI-compatible) ───────────────────────────────────────────
 
-def _generate(prompt: str, image_path: Path | None = None, model: str | None = None) -> str:
-    """Send a prompt (optionally with an image) to Ollama; return response text."""
-    payload: dict = {"model": model or _MODEL, "prompt": prompt, "stream": False}
+def _post_with_retry(url: str, payload: dict, timeout: int) -> dict:
+    """POST to a llama-server endpoint, retrying on network errors with backoff."""
+    last_exc: Exception | None = None
+    for attempt in range(1, _MAX_RETRIES + 1):
+        try:
+            resp = requests.post(url, json=payload, timeout=timeout)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.RequestException as exc:
+            last_exc = exc
+            if attempt < _MAX_RETRIES:
+                logger.warning("Request to %s failed (attempt %d/%d): %s", url, attempt, _MAX_RETRIES, exc)
+                time.sleep(_RETRY_BACKOFF * attempt)
+    raise last_exc
+
+
+def _generate(prompt: str, image_path: Path | None = None) -> str:
+    """Send a prompt (optionally with an image) to the vision llama-server; return response text."""
+    content: list[dict] = [{"type": "text", "text": prompt}]
     if image_path:
-        payload["images"] = [_encode_image(image_path)]
-
-    resp = requests.post(
-        f"{_OLLAMA_HOST}/api/generate",
-        json=payload,
-        timeout=_TIMEOUT,
-    )
-    resp.raise_for_status()
-    return resp.json().get("response", "").strip()
+        content.append({
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{_encode_image(image_path)}"},
+        })
+    payload = {"model": "default", "stream": False, "messages": [{"role": "user", "content": content}]}
+    data = _post_with_retry(f"{_VISION_URL}/v1/chat/completions", payload, _TIMEOUT)
+    return data["choices"][0]["message"]["content"].strip()
 
 
-def _chat(user_message: str, system: str, model: str | None = None, num_predict: int = 300) -> str:
-    """Send a chat request with a system message to Ollama; return response text.
-
-    Using /api/chat with an explicit system role reliably constrains the language
-    and output length, avoiding the Chinese-fallback issue with qwen2.5.
-    """
+def _chat(user_message: str, system: str, num_predict: int = 300) -> str:
+    """Send a chat request with a system message to the text llama-server; return response text."""
     payload = {
-        "model": model or _TEXT_MODEL,
+        "model": "default",
         "stream": False,
-        "options": {"num_predict": num_predict},
+        "max_tokens": num_predict,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user_message},
         ],
     }
-    resp = requests.post(
-        f"{_OLLAMA_HOST}/api/chat",
-        json=payload,
-        timeout=_TEXT_TIMEOUT,
-    )
-    resp.raise_for_status()
-    return resp.json()["message"]["content"].strip()
+    data = _post_with_retry(f"{_TEXT_URL}/v1/chat/completions", payload, _TEXT_TIMEOUT)
+    return data["choices"][0]["message"]["content"].strip()
 
 
 def _parse_structured(text: str, title_key: str, desc_key: str) -> tuple[str, str]:
@@ -155,7 +163,7 @@ def translate_to_english(title_ru: str, description_ru: str) -> dict:
     Returns dict with keys: title_en, description_en. Empty strings on failure.
     """
     try:
-        logger.info("Translating RU→EN via %s...", _TEXT_MODEL)
+        logger.info("Translating RU→EN via %s...", _TEXT_URL)
         raw = _chat(
             user_message=(
                 f"Translate to English:\n"
@@ -188,7 +196,7 @@ def translate_to_russian(title_en: str, description_en: str) -> dict:
 
     prompt = prompt_template.format(title=title_en, description=description_en)
     try:
-        logger.info("Translating EN→RU via %s...", _TEXT_MODEL)
+        logger.info("Translating EN→RU via %s...", _TEXT_URL)
         raw = _chat(
             user_message=prompt,
             system="Переводи точно и только на русский язык. Сохраняй структуру ответа.",
@@ -227,7 +235,7 @@ def generate_social_post_ru(product: dict) -> str:
     )
 
     try:
-        logger.info("Generating social post (RU) via %s...", _TEXT_MODEL)
+        logger.info("Generating social post (RU) via %s...", _TEXT_URL)
         post = _chat(
             user_message=prompt,
             system=(
@@ -268,7 +276,7 @@ def generate_workshop_post_ru(
     )
 
     try:
-        logger.info("Generating workshop post (RU) via %s...", _TEXT_MODEL)
+        logger.info("Generating workshop post (RU) via %s...", _TEXT_URL)
         post = _chat(
             user_message=prompt,
             system=(
@@ -308,7 +316,7 @@ def generate_product_content(
 
     # — English summary (vision model) —
     try:
-        logger.info("Generating English summary via %s...", _MODEL)
+        logger.info("Generating English summary via %s...", _VISION_URL)
         raw_en = _generate(_PROMPTS["summary_en"], image_path=primary)
         content["title_en"], content["description_en"] = _parse_structured(
             raw_en, "TITLE", "DESCRIPTION"
@@ -320,7 +328,7 @@ def generate_product_content(
 
     # — Russian summary (chat API with Russian system message — prevents Chinese fallback) —
     try:
-        logger.info("Generating Russian translation via %s...", _TEXT_MODEL)
+        logger.info("Generating Russian translation via %s...", _TEXT_URL)
         user_msg = _PROMPTS["translate_ru"].replace(
             "{title}", content.get("title_en", "")
         ).replace(
@@ -341,7 +349,7 @@ def generate_product_content(
 
     # — SEO tags (chat API for consistent format) —
     try:
-        logger.info("Generating SEO tags via %s...", _TEXT_MODEL)
+        logger.info("Generating SEO tags via %s...", _TEXT_URL)
         tags_prompt = _PROMPTS["seo_tags"].replace(
             "{description}", content.get("description_en", "handmade ceramic piece")
         )
@@ -361,7 +369,7 @@ def generate_product_content(
 
     # — Etsy listing (vision model) —
     try:
-        logger.info("Generating Etsy listing via %s...", _MODEL)
+        logger.info("Generating Etsy listing via %s...", _VISION_URL)
         content["etsy_listing"] = _generate(_PROMPTS["etsy_listing"], image_path=primary)
     except Exception as exc:
         logger.error("Etsy listing failed: %s", exc)
@@ -369,7 +377,7 @@ def generate_product_content(
 
     # — Social post in Lika Val's voice (Russian, text model) —
     try:
-        logger.info("Generating social post (RU) via %s...", _TEXT_MODEL)
+        logger.info("Generating social post (RU) via %s...", _TEXT_URL)
         prompt_template = _PROMPTS.get("social_post_ru", "")
         if prompt_template:
             post_prompt = (
@@ -403,7 +411,7 @@ def generate_seo_tags(description_en: str) -> list[str]:
     Returns a list of up to 13 lowercase tags, or an empty list on failure.
     """
     try:
-        logger.info("Generating SEO tags via %s...", _TEXT_MODEL)
+        logger.info("Generating SEO tags via %s...", _TEXT_URL)
         tags_prompt = _PROMPTS["seo_tags"].replace(
             "{description}", description_en or "handmade ceramic piece"
         )
@@ -422,10 +430,11 @@ def generate_seo_tags(description_en: str) -> list[str]:
         return []
 
 
-def check_ollama_health() -> bool:
-    """Return True if the Ollama service is reachable."""
+def check_llm_health() -> bool:
+    """Return True if both the vision and text llama-server instances are reachable."""
     try:
-        resp = requests.get(f"{_OLLAMA_HOST}/api/tags", timeout=5)
-        return resp.status_code == 200
+        vision_ok = requests.get(f"{_VISION_URL}/health", timeout=5).status_code == 200
+        text_ok = requests.get(f"{_TEXT_URL}/health", timeout=5).status_code == 200
+        return vision_ok and text_ok
     except requests.RequestException:
         return False

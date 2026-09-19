@@ -2,7 +2,7 @@
 
 Orchestrates the full pipeline:
   1. Fetch new media from Google Drive
-  2. Generate AI content via Ollama
+  2. Generate AI content via llama.cpp
   3. Publish to configured platforms (GitHub, Etsy, Facebook)
 
 Run modes:
@@ -22,7 +22,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from backend.src.config import CONFIG
-from backend.src.ai_module import generate_product_content, generate_seo_tags, check_ollama_health, translate_to_russian
+from backend.src.ai_module import generate_product_content, generate_seo_tags, check_llm_health, translate_to_russian
 from backend.src.media_fetcher import fetch_new_products, parse_description_file
 from backend.src.state_manager import upsert_product, mark_published, append_sync_entry, log_error
 from backend.src.connectors.github_connector import GitHubConnector
@@ -61,12 +61,13 @@ def run_pipeline() -> None:
     logger.info("=== LikaVal pipeline started ===")
     append_sync_entry({"event": "pipeline_start"})
 
-    # 1. Check Ollama availability (non-fatal — products with description files can proceed)
-    ollama_ok = check_ollama_health()
-    if not ollama_ok:
+    # 1. Check LLM availability (non-fatal — products with description files can proceed)
+    llm_ok = check_llm_health()
+    if not llm_ok:
         logger.warning(
-            "Ollama is not reachable at %s — AI generation will be skipped for products "
-            "without a description file", CONFIG["ollama"]["host"]
+            "llama-server is not reachable at %s / %s — AI generation will be skipped for "
+            "products without a description file",
+            CONFIG["llm"]["vision_url"], CONFIG["llm"]["text_url"],
         )
 
     # 2. Fetch new product media from Google Drive
@@ -88,7 +89,7 @@ def run_pipeline() -> None:
         folder = product_folder.folder_name
         logger.info("Processing product: %s", folder)
 
-        # 3. Build content from description file only (no Ollama vision)
+        # 3. Build content from description file only (no vision model)
         try:
             if product_folder.description_file and product_folder.description_file.exists():
                 logger.info("Using description file for %s", folder)
@@ -97,9 +98,9 @@ def run_pipeline() -> None:
                 title_ru = parsed["title_ru"]
                 desc_ru  = parsed["description_ru"]
 
-                # If RU section missing but EN present → translate via Ollama
+                # If RU section missing but EN present → translate via llama.cpp
                 if not title_ru and parsed.get("title_en"):
-                    if ollama_ok:
+                    if llm_ok:
                         logger.info("No RU text found — translating EN→RU for %s", folder)
                         translated = translate_to_russian(
                             parsed["title_en"], parsed["description_en"]
@@ -108,7 +109,7 @@ def run_pipeline() -> None:
                         desc_ru  = translated["description_ru"]
                     else:
                         logger.warning(
-                            "Ollama unavailable — EN→RU translation skipped for %s", folder
+                            "LLM unavailable — EN→RU translation skipped for %s", folder
                         )
 
                 ai_content: dict = {
@@ -122,7 +123,7 @@ def run_pipeline() -> None:
                 }
                 # Generate SEO tags from available text
                 text_for_tags = desc_ru or parsed["description_en"]
-                if ollama_ok and text_for_tags:
+                if llm_ok and text_for_tags:
                     ai_content["seo_tags"] = generate_seo_tags(text_for_tags)
 
             else:

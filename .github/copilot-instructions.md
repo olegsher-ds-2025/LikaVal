@@ -38,7 +38,7 @@ LikaVal is an automated content publishing platform for a handmade ceramics bran
 
 - **Static multilingual frontend** — hosted on GitHub Pages (HTML5/CSS3/vanilla JS or lightweight framework)
 - **Python backend automation service** — runs on Linux (Raspberry Pi 4B target; Docker-compatible)
-- **AI content generation module** — integrates with a local [Ollama](https://ollama.com) instance
+- **AI content generation module** — integrates with [llama.cpp](https://github.com/ggml-org/llama.cpp) (`llama-server`) instances on a Jetson Orin Nano
 - **Publishing connectors** — Etsy, Facebook, and GitHub (extensible architecture)
 
 There is no relational database. All state and configuration is stored in human-readable, Git-compatible text files (JSON, YAML, TOML, or Markdown with frontmatter).
@@ -50,7 +50,7 @@ There is no relational database. All state and configuration is stored in human-
 ```
 Google Drive (media source)
     └── Media Fetcher (daily cron)
-            └── AI Module (Ollama via HTTP)
+            └── AI Module (llama.cpp via HTTP)
                     └── Publishing Automation
                             ├── GitHub (git push → GitHub Pages frontend)
                             ├── Etsy connector
@@ -99,7 +99,7 @@ Prices are stored in ILS and converted to USD via a configurable coefficient (no
 
 ### AI Integration
 
-The backend communicates with Ollama via HTTP. The endpoint (IP + port) is configurable. AI generates: product titles, short descriptions, SEO tags, social media captions, Etsy listing text, and Facebook post drafts. Prompts are configurable.
+The backend communicates with llama.cpp (`llama-server`) via HTTP. The vision/text endpoints (IP + port) are configurable. AI generates: product titles, short descriptions, SEO tags, social media captions, Etsy listing text, and Facebook post drafts. Prompts are configurable.
 
 ### State Files
 
@@ -125,16 +125,17 @@ All connectors live in `backend/src/connectors/`. To add a new platform:
 
 ## AI Module — Two-Model Setup
 
-The AI module uses two separate Ollama models configured in `config/config.yaml`:
+The AI module talks to two separate `llama-server` (llama.cpp) processes on the Jetson,
+configured in `config/config.yaml`:
 
 | Key | Default | Purpose |
 |---|---|---|
-| `ollama.model` | `llava-phi3` | Vision model — analyzes images via `/api/generate` |
-| `ollama.text_model` | `qwen2.5:7b-instruct-q4_K_M` | Text-only — translation, SEO tags, social posts via `/api/chat` |
+| `llm.vision_url` | `http://10.0.0.20:8001` | Vision GGUF — analyzes images via `/v1/chat/completions` |
+| `llm.text_url` | `http://10.0.0.20:8002` | Text-only GGUF — translation, SEO tags, social posts via `/v1/chat/completions` |
 
-Use `_generate()` for vision tasks (passes base64 image in payload). Use `_chat()` for text tasks — it sets a `system` message to constrain language and prevent the qwen2.5 Chinese-fallback issue.
+Use `_generate()` for vision tasks (passes a base64 `image_url` content part). Use `_chat()` for text tasks — it sets a `system` message to constrain language and output length. Both retry transient network failures via `_post_with_retry()` before the caller's `try/except` degrades to empty output.
 
-Prompts are fully configurable under `ollama.prompts` in `config.yaml` and support `{placeholder}` substitution at call time.
+Prompts are fully configurable under `llm.prompts` in `config.yaml` and support `{placeholder}` substitution at call time.
 
 ---
 
@@ -144,7 +145,7 @@ Config is loaded from `config/config.yaml` as a singleton (`from backend.src.con
 
 | Parameter | Description |
 |---|---|
-| `ollama_host` | AI service endpoint (IP:port) |
+| `llm.vision_url` / `llm.text_url` | AI service endpoints (IP:port) |
 | `gdrive_folder_id` / `gdrive_folder_name` | Google Drive media source (ID takes priority) |
 | `ils_to_usd_ratio` | Currency conversion coefficient |
 | `publish_schedule` | Cron timing for automation runs |

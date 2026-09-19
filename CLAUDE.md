@@ -11,7 +11,7 @@ Target hardware: Raspberry Pi 4B (4 GB RAM). Keep resource usage minimal.
 ```
 backend/main.py              # Orchestrator — single-run or daemon (APScheduler cron)
 backend/src/
-  ai_module.py               # Ollama LLM calls: EN/RU content, SEO tags, Etsy listings
+  ai_module.py               # llama.cpp LLM calls: EN/RU content, SEO tags, Etsy listings
   media_fetcher.py           # Google Drive watcher — downloads images/videos
   state_manager.py           # JSON-based persistence (no database)
   config.py                  # YAML config with ${ENV_VAR:default} resolution
@@ -35,7 +35,7 @@ frontend/                    # Static multilingual site: en/ ru/ he/
 - **Currency:** ILS → USD via `ILS_TO_USD_RATIO` (default 0.80)
 - **State:** Zero-database — all state in `state/*.json`; Git-compatible
 - **Languages:** EN (primary/USD), RU (ILS), HE (stub)
-- **AI stack:** Ollama local — vision model (llava-phi3) + text model (mistral:7b)
+- **AI stack:** llama.cpp (`llama-server`) on the Jetson — one process per GGUF: vision model on `LLM_VISION_URL`, text model on `LLM_TEXT_URL`
 - **No Docker runtime changes** without confirming — container runs `python backend/main.py --daemon`
 
 ## MCP Servers
@@ -43,23 +43,27 @@ frontend/                    # Static multilingual site: en/ ru/ he/
 ### Etsy (`mcp__etsy__*`)
 Configured at `mcp.api.etsycloud.com`. Use to inspect/manage Etsy listings and shop inventory.
 
-### Ollama on Jetson Orin Nano (`mcp__ollama-jetson__*`)
-Local GPU at `http://10.0.0.20:11434`. Use for RAG and embedding-heavy tasks — offloads inference from the host machine.
+### Jetson Orin Nano — llama.cpp (no MCP server; direct HTTP)
+`llama-server` instances on the Jetson, reached directly via `LLM_VISION_URL`/`LLM_TEXT_URL`
+(OpenAI-compatible `/v1/chat/completions`, health at `/health`). There is no llama.cpp MCP
+server — `mcp-server-ollama` doesn't speak this API, so it was removed rather than swapped.
+llama.cpp serves **one GGUF per process**, unlike Ollama's hot-swap — running more than the
+vision + text pair concurrently needs its own port per model and enough of the Jetson's 8 GB RAM.
 
-**Available models on Jetson:**
+**GGUF models to load per llama-server instance:**
 | Model | Size | Best for |
 |---|---|---|
-| `qwen3-coder:latest` | 30.5B Q4 | Code, structured output |
-| `mistral:7b-instruct-q4_K_M` | 7B | Chat, translation |
-| `qwen2.5:7b-instruct-q4_K_M` | 7.6B | RAG retrieval + synthesis |
-| `llava-phi3:latest` | 4B | Vision (product images) |
-| `llama3.2:latest` | 3.2B | Fast summarization |
-| `aya:8b` | 8B | Multilingual (EN/RU/HE) |
+| qwen3-coder GGUF | 30.5B Q4 | Code, structured output |
+| mistral-7b-instruct GGUF | 7B | Chat, translation |
+| qwen2.5-7b-instruct GGUF | 7.6B | RAG retrieval + synthesis |
+| llava-phi3 GGUF (`--mmproj`) | 4B | Vision (product images) — `LLM_VISION_URL` |
+| llama-3.2 GGUF | 3.2B | Fast summarization |
+| aya-8b GGUF | 8B | Multilingual (EN/RU/HE) |
 
 **RAG use cases to offload to Jetson:**
-- Embedding generation for product catalog semantic search
+- Embedding generation for product catalog semantic search (dedicated `llama-server --embedding` instance)
 - Retrieval + synthesis over writing_styles.yaml context
-- Multilingual content generation (EN → RU via `aya:8b`)
+- Multilingual content generation (EN → RU via an aya-8b GGUF)
 - Batch product description generation when publishing many products
 
 ## Skills Available
@@ -76,9 +80,8 @@ Local GPU at `http://10.0.0.20:11434`. Use for RAG and embedding-heavy tasks —
 
 | Variable | Purpose |
 |---|---|
-| `OLLAMA_HOST` | Ollama API base URL |
-| `OLLAMA_MODEL` | Vision model (default: llava-phi3) |
-| `OLLAMA_TEXT_MODEL` | Text model (default: mistral:7b) |
+| `LLM_VISION_URL` | Vision `llama-server` base URL (default: `http://10.0.0.20:8001`) |
+| `LLM_TEXT_URL` | Text `llama-server` base URL (default: `http://10.0.0.20:8002`) |
 | `GDRIVE_FOLDER_ID` | Google Drive source folder |
 | `GITHUB_TOKEN` | GitHub API token for publishing |
 | `GITHUB_REPO` | Target repo (owner/repo) |

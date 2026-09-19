@@ -6,7 +6,7 @@ What it does:
   2. Products in state that are no longer in Drive → marked 'sold'
   3. For each Drive folder: finds description file (Google Doc preferred, description.txt fallback)
   4. Google Docs (Russian primary) exported as plain text and parsed
-  5. Missing language generated via Ollama:
+  5. Missing language generated via llama.cpp:
        RU-only doc  → translate RU→EN  (English for Etsy)
        EN-only doc  → translate EN→RU  (Russian for the site)
   6. SEO tags and social post refreshed when content changed
@@ -34,7 +34,7 @@ from backend.src.state_manager import (
 )
 from backend.src.ai_module import (
     translate_to_english, translate_to_russian, generate_seo_tags,
-    generate_social_post_ru, check_ollama_health,
+    generate_social_post_ru, check_llm_health,
 )
 from backend.src.media_fetcher import (
     _build_drive_service, _list_items, _resolve_root_folder_id,
@@ -147,8 +147,8 @@ def _parse_text(text: str) -> dict:
 def sync() -> None:
     append_sync_entry({"event": "drive_sync_start"})
 
-    ollama_ok = check_ollama_health()
-    logger.info("Ollama reachable: %s", ollama_ok)
+    ollama_ok = check_llm_health()
+    logger.info("LLM reachable: %s", ollama_ok)
 
     # Connect to Drive
     try:
@@ -221,7 +221,7 @@ def sync() -> None:
 
         # ── Detect changes BEFORE translation ────────────────────────────────
         # Compare only the source languages the doc actually provides so that a
-        # non-deterministic Ollama translation never triggers a spurious re-run.
+        # non-deterministic LLM translation never triggers a spurious re-run.
         existing     = products.get(folder_name, {})
         prev_ai      = existing.get("ai", {})
         drive_status = "sold" if meta["is_sold"] else "available"
@@ -258,7 +258,7 @@ def sync() -> None:
                 t = translate_to_english(title_ru, desc_ru)
                 title_en, desc_en = t["title_en"], t["description_en"]
             else:
-                logger.warning("Ollama unavailable — EN translation skipped for %s", folder_name)
+                logger.warning("LLM unavailable — EN translation skipped for %s", folder_name)
         elif title_en and not title_ru:
             if not source_changed and prev_ai.get("title_ru"):
                 title_ru = prev_ai["title_ru"]
@@ -268,7 +268,7 @@ def sync() -> None:
                 t = translate_to_russian(title_en, desc_en)
                 title_ru, desc_ru = t["title_ru"], t["description_ru"]
             else:
-                logger.warning("Ollama unavailable — RU translation skipped for %s", folder_name)
+                logger.warning("LLM unavailable — RU translation skipped for %s", folder_name)
 
         # ── SEO tags and social post ──────────────────────────────────────────
         seo_tags       = prev_ai.get("seo_tags", [])

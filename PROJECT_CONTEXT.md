@@ -31,7 +31,7 @@ Run modes: `python backend/main.py` (single run) or `--daemon` (APScheduler cron
 | File | Lines | Responsibility |
 |---|---|---|
 | `backend/main.py` | 202 | Orchestrator: `run_pipeline()`, `run_daemon()`, CLI entry |
-| `backend/src/ai_module.py` | 404 | Ollama LLM: vision→EN, EN→RU, SEO tags, social posts |
+| `backend/src/ai_module.py` | 404 | llama.cpp LLM: vision→EN, EN→RU, SEO tags, social posts |
 | `backend/src/media_fetcher.py` | 360 | Google Drive watcher; `ProductFolder` dataclass; folder name parser |
 | `backend/src/state_manager.py` | 102 | JSON R/W helpers; all product state mutations |
 | `backend/src/config.py` | ~50 | YAML loader with `${ENV_VAR:default}` resolution |
@@ -58,9 +58,9 @@ Run modes: `python backend/main.py` (single run) or `--daemon` (APScheduler cron
 - `translate_to_russian(title_en, description_en) → {title_ru, description_ru}`
 - `generate_social_post_ru(product) → str`
 - `generate_seo_tags(description_en) → list[str]`
-- `check_ollama_health() → bool`
-- Internal: `_generate(prompt, image_path, model)` — Ollama `/api/generate`
-- Internal: `_chat(user_message, system, model, num_predict)` — Ollama `/api/chat`
+- `check_llm_health() → bool`
+- Internal: `_generate(prompt, image_path)` — llama-server `/v1/chat/completions` (vision)
+- Internal: `_chat(user_message, system, num_predict)` — llama-server `/v1/chat/completions` (text)
 
 ### `state_manager.py`
 - `load_products() / save_products(products)` — full dict R/W
@@ -166,14 +166,15 @@ Custom domain in `CNAME`. `robots.txt` + `sitemap.xml` present.
 
 ## AI Models
 
-| Model | Purpose |
+| Model (GGUF) | Purpose |
 |---|---|
-| `llava-phi3:latest` (4B) | Vision — product image analysis |
-| `mistral:7b-instruct-q4_K_M` | Text generation, EN content, SEO tags |
-| `aya:8b` | Multilingual, EN→RU translation (Jetson) |
+| llava-phi3 (4B, `--mmproj`) | Vision — product image analysis |
+| mistral-7b-instruct | Text generation, EN content, SEO tags |
+| aya-8b | Multilingual, EN→RU translation (Jetson) |
 
-Ollama host: env `OLLAMA_HOST` (default localhost:11434).
-Jetson Orin Nano GPU at `http://10.0.0.20:11434` for heavier inference.
+Served by `llama-server` (llama.cpp) — one process per GGUF, no hot-swap.
+Vision: env `LLM_VISION_URL` (default `http://10.0.0.20:8001`).
+Text: env `LLM_TEXT_URL` (default `http://10.0.0.20:8002`).
 
 ---
 
@@ -199,7 +200,7 @@ Jetson Orin Nano GPU at `http://10.0.0.20:11434` for heavier inference.
 ## Known Issues / Flags
 
 - `20260519-150` vs `20260519_150` — duplicate entry with hyphen vs underscore; investigate which is canonical before publishing
-- All 7 products have `ai_content: {}` — no content has been generated yet; next pipeline run with Ollama healthy will generate
+- All 7 products have `ai_content: {}` — no content has been generated yet; next pipeline run with the LLM healthy will generate
 - `pending_text=True` path: product HTML is published with placeholder, then re-published when content arrives
 
 ---
@@ -216,8 +217,8 @@ python backend/main.py --daemon
 # Check state
 cat state/products.json | python3 -m json.tool
 
-# Check Ollama health
-curl http://localhost:11434/api/tags
+# Check LLM health
+curl $LLM_TEXT_URL/health
 
 # Force-push frontend to gh-pages (done by connector, but manual if needed)
 git subtree push --prefix frontend origin gh-pages
