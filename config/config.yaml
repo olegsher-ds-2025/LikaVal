@@ -2,8 +2,12 @@
 # Override any value via environment variable or .env file.
 
 llm:
-  vision_url: "${LLM_VISION_URL:http://10.0.0.20:8001}"  # llama-server serving the vision GGUF
-  text_url: "${LLM_TEXT_URL:http://10.0.0.20:8002}"       # llama-server serving the text GGUF
+  # Shared on-demand llama.cpp gateway (lan_orchestrator) on the Jetson. It starts
+  # llama.cpp lazily on first request and reverse-proxies to it. Currently serves
+  # one text-only model (Qwen2.5-3B) — no vision model is loaded, so vision calls
+  # will fail/degrade gracefully until a separate vision endpoint exists.
+  vision_url: "${LLM_VISION_URL:http://10.0.0.20:8080}"
+  text_url: "${LLM_TEXT_URL:http://10.0.0.20:8080}"
   timeout: 180  # seconds — vision inference is slower
   text_timeout: 300  # seconds — text-only calls; larger models need ~2min to load + generate
   vision_frames: 3   # frames to extract from video for analysis

@@ -431,10 +431,17 @@ def generate_seo_tags(description_en: str) -> list[str]:
 
 
 def check_llm_health() -> bool:
-    """Return True if both the vision and text llama-server instances are reachable."""
+    """Return True if the vision and text llama-server endpoints are reachable.
+
+    On the Jetson, llama-server sits behind an on-demand gateway that starts it
+    lazily on the first request and blocks that request until the model finishes
+    loading (a few seconds warm, up to ~3 minutes on a cold start) — so this uses
+    a generous 60s timeout rather than failing fast.
+    """
     try:
-        vision_ok = requests.get(f"{_VISION_URL}/health", timeout=5).status_code == 200
-        text_ok = requests.get(f"{_TEXT_URL}/health", timeout=5).status_code == 200
-        return vision_ok and text_ok
+        return all(
+            requests.get(f"{url}/health", timeout=60).status_code == 200
+            for url in {_VISION_URL, _TEXT_URL}
+        )
     except requests.RequestException:
         return False
