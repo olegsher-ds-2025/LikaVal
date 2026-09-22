@@ -1,0 +1,16 @@
+{
+  "name": "Лика Вал | Soul Ceramics",
+  "short_name": "LikaVal",
+  "description": "Авторская керамика и мастер-классы по керамике в Петах-Тикве",
+  "start_url": "/ru/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
