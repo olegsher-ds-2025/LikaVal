@@ -157,36 +157,87 @@ def _parse_structured(text: str, title_key: str, desc_key: str) -> tuple[str, st
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def _is_cyrillic(text: str) -> bool:
+    return bool(re.search(r"[а-яёА-ЯЁ]", text))
+
+
+def _translate_text(text: str, target_lang: str) -> str:
+    """Translate a single piece of text in isolation.
+
+    Small models are noticeably more reliable translating one string at a
+    time than filling out a combined title+description template — used as a
+    fallback when the structured prompt leaves the title untranslated.
+    """
+    if not text:
+        return ""
+    if target_lang == "ru":
+        user = f"Translate this text to Russian. Output ONLY the Russian translation, nothing else, no quotes:\n{text}"
+        system = "You are a translator. Output only the translated text in Russian, nothing else."
+        valid = _is_cyrillic
+    else:
+        user = f"Translate this text to English. Output ONLY the English translation, nothing else, no quotes:\n{text}"
+        system = "You are a translator. Output only the translated text in English, nothing else."
+        valid = lambda t: not _is_cyrillic(t)
+    try:
+        raw = _chat(user_message=user, system=system, num_predict=500).strip().strip('"')
+        return raw if raw and valid(raw) else ""
+    except Exception as exc:
+        logger.error("Isolated %s translation failed: %s", target_lang, exc)
+        return ""
+
+
 def translate_to_english(title_ru: str, description_ru: str) -> dict:
     """Translate Russian title and description to English using the text model.
 
+    Retries once, then falls back to translating title/description in
+    isolation if the structured prompt leaves either one untranslated.
     Returns dict with keys: title_en, description_en. Empty strings on failure.
     """
-    try:
-        logger.info("Translating RU→EN via %s...", _TEXT_URL)
-        raw = _chat(
-            user_message=(
-                f"Translate to English:\n"
-                f"НАЗВАНИЕ: {title_ru}\n"
-                f"ОПИСАНИЕ: {description_ru}\n\n"
-                f"Answer strictly in this format:\n"
-                f"TITLE: ...\n"
-                f"DESCRIPTION: ..."
-            ),
-            system="You are a professional translator. Translate accurately to English only. Keep the same structure.",
-            num_predict=500,
-        )
-        title_en, desc_en = _parse_structured(raw, "TITLE", "DESCRIPTION")
-        logger.info("RU→EN translation done — title_en=%s", (title_en or "")[:60])
+    title_en, desc_en = "", ""
+    for attempt in range(2):
+        try:
+            logger.info("Translating RU→EN via %s... (attempt %d)", _TEXT_URL, attempt + 1)
+            strict_prefix = "STRICT: respond only in English. Do not output any Russian text.\n" if attempt else ""
+            raw = _chat(
+                user_message=(
+                    f"{strict_prefix}Translate to English:\n"
+                    f"НАЗВАНИЕ: {title_ru}\n"
+                    f"ОПИСАНИЕ: {description_ru}\n\n"
+                    f"Answer strictly in this format:\n"
+                    f"TITLE: ...\n"
+                    f"DESCRIPTION: ..."
+                ),
+                system="You are a professional translator. Translate accurately to English only. Keep the same structure.",
+                num_predict=500,
+            )
+            title_en, desc_en = _parse_structured(raw, "TITLE", "DESCRIPTION")
+            if title_en and not _is_cyrillic(title_en) and desc_en and not _is_cyrillic(desc_en):
+                logger.info("RU→EN translation done — title_en=%s", title_en[:60])
+                return {"title_en": title_en, "description_en": desc_en}
+        except Exception as exc:
+            logger.error("RU→EN translation failed: %s", exc)
+            break
+        logger.warning("RU→EN structured translation attempt %d incomplete — retrying", attempt + 1)
+
+    logger.info("Falling back to isolated title/description translation for RU→EN")
+    if not (title_en and not _is_cyrillic(title_en)):
+        title_en = _translate_text(title_ru, "en")
+    if not (desc_en and not _is_cyrillic(desc_en)):
+        desc_en = _translate_text(description_ru, "en")
+
+    if title_en:
+        logger.info("RU→EN translation done (isolated fallback) — title_en=%s", title_en[:60])
         return {"title_en": title_en, "description_en": desc_en}
-    except Exception as exc:
-        logger.error("RU→EN translation failed: %s", exc)
-        return {"title_en": "", "description_en": ""}
+
+    logger.error("RU→EN translation failed after all fallbacks")
+    return {"title_en": "", "description_en": ""}
 
 
 def translate_to_russian(title_en: str, description_en: str) -> dict:
     """Translate English title and description to Russian using the text model.
 
+    Retries once, then falls back to translating title/description in
+    isolation if the structured prompt leaves either one untranslated.
     Returns dict with keys: title_ru, description_ru. Empty strings on failure.
     """
     prompt_template = _PROMPTS.get("translate_ru", "")
@@ -195,21 +246,42 @@ def translate_to_russian(title_en: str, description_en: str) -> dict:
         return {"title_ru": "", "description_ru": ""}
 
     prompt = prompt_template.format(title=title_en, description=description_en)
-    try:
-        logger.info("Translating EN→RU via %s...", _TEXT_URL)
-        raw = _chat(
-            user_message=prompt,
-            system="Переводи точно и только на русский язык. Сохраняй структуру ответа.",
-            num_predict=500,
-        )
-        title_ru, desc_ru = _parse_structured(raw, "НАЗВАНИЕ", "ОПИСАНИЕ")
-        if not title_ru:
-            title_ru, desc_ru = _parse_structured(raw, "Title", "Description")
-        logger.info("Translation done — title_ru=%s", (title_ru or "")[:60])
+    title_ru, desc_ru = "", ""
+    for attempt in range(2):
+        try:
+            logger.info("Translating EN→RU via %s... (attempt %d)", _TEXT_URL, attempt + 1)
+            strict_prefix = (
+                "СТРОГО: отвечай только на русском языке (кириллицей). "
+                "Ни одного слова на английском.\n" if attempt else ""
+            )
+            raw = _chat(
+                user_message=strict_prefix + prompt,
+                system="Переводи точно и только на русский язык. Отвечай ТОЛЬКО кириллицей. Сохраняй структуру ответа.",
+                num_predict=500,
+            )
+            title_ru, desc_ru = _parse_structured(raw, "НАЗВАНИЕ", "ОПИСАНИЕ")
+            if not title_ru:
+                title_ru, desc_ru = _parse_structured(raw, "Title", "Description")
+            if title_ru and _is_cyrillic(title_ru) and desc_ru and _is_cyrillic(desc_ru):
+                logger.info("Translation done — title_ru=%s", title_ru[:60])
+                return {"title_ru": title_ru, "description_ru": desc_ru}
+        except Exception as exc:
+            logger.error("Translation failed: %s", exc)
+            break
+        logger.warning("EN→RU structured translation attempt %d incomplete — retrying", attempt + 1)
+
+    logger.info("Falling back to isolated title/description translation for EN→RU")
+    if not (title_ru and _is_cyrillic(title_ru)):
+        title_ru = _translate_text(title_en, "ru")
+    if not (desc_ru and _is_cyrillic(desc_ru)):
+        desc_ru = _translate_text(description_en, "ru")
+
+    if title_ru:
+        logger.info("Translation done (isolated fallback) — title_ru=%s", title_ru[:60])
         return {"title_ru": title_ru, "description_ru": desc_ru}
-    except Exception as exc:
-        logger.error("Translation failed: %s", exc)
-        return {"title_ru": "", "description_ru": ""}
+
+    logger.error("EN→RU translation failed after all fallbacks")
+    return {"title_ru": "", "description_ru": ""}
 
 
 def generate_social_post_ru(product: dict) -> str:

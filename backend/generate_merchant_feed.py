@@ -51,7 +51,7 @@ WEIGHT_BY_FOLDER: dict[str, str] = {
     "20260519_150": "0.45 kg",   # olive dish
     "20260520_280": "0.55 kg",   # owl mug
 }
-DEFAULT_WEIGHT = ""
+DEFAULT_WEIGHT = "0.5 kg"  # typical handmade ceramic piece — refine per-product in WEIGHT_BY_FOLDER
 
 # TSV columns in spec order
 COLUMNS = [
@@ -212,6 +212,10 @@ def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
             for p in pub_images[1:5]   # up to 4 additional
         )
 
+        if folder not in CATEGORY_BY_FOLDER:
+            logger.warning("No category set for %s — using default: %s", folder, DEFAULT_CATEGORY)
+        if folder not in WEIGHT_BY_FOLDER:
+            logger.warning("No shipping weight set for %s — using default: %s", folder, DEFAULT_WEIGHT)
         category = CATEGORY_BY_FOLDER.get(folder, DEFAULT_CATEGORY)
         weight   = WEIGHT_BY_FOLDER.get(folder, DEFAULT_WEIGHT)
         material = "ceramic, clay, glaze"

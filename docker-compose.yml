@@ -10,6 +10,8 @@ services:
       - ./state:/app/state            # pipeline state
       - ./logs:/app/logs              # log files
       - ./backend/downloads:/app/backend/downloads  # temporary media
+      - ./.git:/app/.git              # persist git history across rebuilds (avoid main-branch divergence)
+      - ./frontend:/app/frontend      # persist generated site pages across rebuilds
     environment:
       - PYTHONUNBUFFERED=1
     mem_limit: 512m

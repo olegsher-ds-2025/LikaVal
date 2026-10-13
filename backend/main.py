@@ -22,12 +22,13 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from backend.src.config import CONFIG
-from backend.src.ai_module import generate_product_content, generate_seo_tags, check_llm_health, translate_to_russian
+from backend.src.ai_module import generate_product_content, generate_seo_tags, check_llm_health, translate_to_russian, translate_to_english
 from backend.src.media_fetcher import fetch_new_products, parse_description_file
 from backend.src.state_manager import upsert_product, mark_published, append_sync_entry, log_error
 from backend.src.connectors.github_connector import GitHubConnector
 from backend.src.connectors.etsy_connector import EtsyConnector
 from backend.src.connectors.facebook_connector import FacebookConnector
+from backend.generate_merchant_feed import build_feeds as build_merchant_feeds
 
 
 def _setup_logging() -> None:
@@ -95,26 +96,37 @@ def run_pipeline() -> None:
                 logger.info("Using description file for %s", folder)
                 parsed = parse_description_file(product_folder.description_file)
 
+                title_en = parsed["title_en"]
+                desc_en  = parsed["description_en"]
                 title_ru = parsed["title_ru"]
                 desc_ru  = parsed["description_ru"]
 
-                # If RU section missing but EN present → translate via llama.cpp
-                if not title_ru and parsed.get("title_en"):
+                # Fill in a missing language via translation — but never overwrite
+                # a human-written title/description that was actually found in the file.
+                if not title_ru and title_en:
                     if llm_ok:
                         logger.info("No RU text found — translating EN→RU for %s", folder)
-                        translated = translate_to_russian(
-                            parsed["title_en"], parsed["description_en"]
-                        )
+                        translated = translate_to_russian(title_en, desc_en)
                         title_ru = translated["title_ru"]
-                        desc_ru  = translated["description_ru"]
+                        desc_ru  = desc_ru or translated["description_ru"]
                     else:
                         logger.warning(
                             "LLM unavailable — EN→RU translation skipped for %s", folder
                         )
+                elif not title_en and title_ru:
+                    if llm_ok:
+                        logger.info("No EN text found — translating RU→EN for %s", folder)
+                        translated = translate_to_english(title_ru, desc_ru)
+                        title_en = translated["title_en"]
+                        desc_en  = desc_en or translated["description_en"]
+                    else:
+                        logger.warning(
+                            "LLM unavailable — RU→EN translation skipped for %s", folder
+                        )
 
                 ai_content: dict = {
-                    "title_en":       parsed["title_en"],
-                    "description_en": parsed["description_en"],
+                    "title_en":       title_en,
+                    "description_en": desc_en,
                     "title_ru":       title_ru,
                     "description_ru": desc_ru,
                     "seo_tags":       [],
@@ -122,7 +134,7 @@ def run_pipeline() -> None:
                     "social_post_ru": "",
                 }
                 # Generate SEO tags from available text
-                text_for_tags = desc_ru or parsed["description_en"]
+                text_for_tags = desc_ru or desc_en
                 if llm_ok and text_for_tags:
                     ai_content["seo_tags"] = generate_seo_tags(text_for_tags)
 
@@ -158,6 +170,18 @@ def run_pipeline() -> None:
                 mark_published(folder, connector.name)
 
         published_count += 1
+
+    # 5. Regenerate and publish Google Merchant Center feeds so the site's
+    # already-live TSV URLs (picked up by Merchant Center's scheduled fetch)
+    # reflect the products just published.
+    if published_count > 0:
+        try:
+            logger.info("Regenerating Google Merchant Center feeds...")
+            build_merchant_feeds(Path("frontend"), llm_ok)
+            GitHubConnector().publish_static_files()
+            logger.info("Merchant Center feeds published")
+        except Exception as exc:
+            log_error("merchant_feed", f"Feed regeneration/publish failed: {exc}")
 
     logger.info("=== Pipeline complete — %d product(s) published ===", published_count)
     append_sync_entry({"event": "pipeline_complete", "new_products": published_count})

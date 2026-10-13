@@ -21,7 +21,8 @@ VOLUME ["/app/config", "/app/state", "/app/logs", "/app/backend/downloads"]
 
 # Configure git identity for automated commits
 RUN git config --global user.email "likaval-bot@likaval.com" \
- && git config --global user.name "LikaVal Bot"
+ && git config --global user.name "LikaVal Bot" \
+ && git config --global --add safe.directory /app
 
 ENV PYTHONUNBUFFERED=1
 

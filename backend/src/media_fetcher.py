@@ -59,10 +59,51 @@ class ProductFolder:
         return "sold" if self.is_sold else "available"
 
 
-def parse_description_file(path: Path) -> dict:
-    """Parse a ``description.txt`` file with EN:/RU: labelled sections.
+_ENGLISH_MARKER_RE = re.compile(r"^.*\bENGLISH\b.*$", re.IGNORECASE | re.MULTILINE)
+_LANG_HEADER_RE = re.compile(r"^\s*(RUSSIAN|РУССКИЙ)\b", re.IGNORECASE)
+_TAGS_HEADER_RE = re.compile(r"^\s*(Теги|Tags)\b", re.IGNORECASE)
+_NUMBERED_LINE_RE = re.compile(r"^\s*\d+[.)]\s+\S")
+_TRAILING_DIVIDER_RE = re.compile(r"(\n\s*_{3,}\s*)+\Z")
 
-    Expected format::
+
+def _strip_tags_block(lines: list[str]) -> list[str]:
+    """Drop a trailing tag list: everything from a 'Теги'/'Tags' header onward,
+    or — absent a header — a trailing run of numbered '1. foo' lines."""
+    for i, line in enumerate(lines):
+        if _TAGS_HEADER_RE.match(line):
+            return lines[:i]
+    end = len(lines)
+    while end > 0 and (not lines[end - 1].strip() or _NUMBERED_LINE_RE.match(lines[end - 1])):
+        end -= 1
+    return lines[:end]
+
+
+def _extract_title_and_body(block: str) -> tuple[str, str]:
+    """First content line is the title; the rest (minus any tag list) is the body."""
+    lines = _strip_tags_block(block.split("\n"))
+    while lines and (
+        not lines[0].strip()
+        or _LANG_HEADER_RE.match(lines[0])
+        or _ENGLISH_MARKER_RE.match(lines[0])
+    ):
+        lines.pop(0)
+    if not lines:
+        return "", ""
+    title = lines[0].strip()
+    body = "\n".join(lines[1:]).strip()
+    return title, body
+
+
+def _is_mostly_cyrillic(text: str) -> bool:
+    cyrillic = len(re.findall(r"[а-яёА-ЯЁ]", text))
+    latin = len(re.findall(r"[a-zA-Z]", text))
+    return cyrillic > latin
+
+
+def parse_description_file(path: Path) -> dict:
+    """Parse a hand-written ``description.txt`` into title/description per language.
+
+    Supports the legacy labelled format::
 
         EN:
         Title: My Product
@@ -72,37 +113,63 @@ def parse_description_file(path: Path) -> dict:
         Название: Мой продукт
         Описание: Текст...
 
+    ...and the free-form format actually used day-to-day: a Russian block
+    (optionally starting with a "РУССКИЙ ВАРИАНТ" header), a "___" divider,
+    then a line containing "ENGLISH" (e.g. "🇬🇧 ENGLISH VERSION") introducing
+    the English block. Within each block the first line is the title, and a
+    trailing tag list (a "Теги"/"Tags" header, or a bare numbered list) is
+    stripped from the description body. A file with only one language is
+    detected by Cyrillic-vs-Latin letter ratio.
+
     Returns a dict with keys: title_en, description_en, title_ru, description_ru.
     Missing fields are returned as empty strings.
     """
-    text = path.read_text(encoding="utf-8").strip()
+    text = path.read_text(encoding="utf-8-sig").strip()
     result: dict = {"title_en": "", "description_en": "", "title_ru": "", "description_ru": ""}
 
-    # Split by language section headers (EN: or RU: on their own line)
-    parts = re.split(r"\n\s*(EN|RU)\s*:\s*\n", text, flags=re.IGNORECASE)
-    # parts layout: [preamble, LABEL, block, LABEL, block, ...]
-    i = 1
-    while i + 1 < len(parts):
-        lang = parts[i].strip().upper()
-        block = parts[i + 1]
+    # Legacy labelled format, still supported.
+    if re.search(r"\n\s*(EN|RU)\s*:\s*\n", text, flags=re.IGNORECASE):
+        parts = re.split(r"\n\s*(EN|RU)\s*:\s*\n", text, flags=re.IGNORECASE)
+        i = 1
+        while i + 1 < len(parts):
+            lang = parts[i].strip().upper()
+            block = parts[i + 1]
 
-        if lang == "EN":
-            title_m = re.search(r"^Title\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
-            desc_m = re.search(r"^Description\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
-            if title_m:
-                result["title_en"] = title_m.group(1).strip()
-            if desc_m:
-                result["description_en"] = desc_m.group(1).strip()
-        elif lang == "RU":
-            title_m = re.search(r"^(?:Title|Название)\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
-            desc_m = re.search(r"^(?:Description|Описание)\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
-            if title_m:
-                result["title_ru"] = title_m.group(1).strip()
-            if desc_m:
-                result["description_ru"] = desc_m.group(1).strip()
+            if lang == "EN":
+                title_m = re.search(r"^Title\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
+                desc_m = re.search(r"^Description\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
+                if title_m:
+                    result["title_en"] = title_m.group(1).strip()
+                if desc_m:
+                    result["description_en"] = desc_m.group(1).strip()
+            elif lang == "RU":
+                title_m = re.search(r"^(?:Title|Название)\s*:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
+                desc_m = re.search(r"^(?:Description|Описание)\s*:\s*([\s\S]+)", block, re.MULTILINE | re.IGNORECASE)
+                if title_m:
+                    result["title_ru"] = title_m.group(1).strip()
+                if desc_m:
+                    result["description_ru"] = desc_m.group(1).strip()
 
-        i += 2
+            i += 2
 
+        return result
+
+    # Free-form format: RU block, then a line containing "ENGLISH" starts the EN block.
+    marker = _ENGLISH_MARKER_RE.search(text)
+    if marker:
+        ru_block = _TRAILING_DIVIDER_RE.sub("", text[: marker.start()]).strip()
+        en_block = text[marker.end() :].strip()
+
+        result["title_ru"], result["description_ru"] = _extract_title_and_body(ru_block)
+        result["title_en"], result["description_en"] = _extract_title_and_body(en_block)
+        return result
+
+    # No EN/RU split — a single free-form block; detect the language.
+    title, body = _extract_title_and_body(text)
+    if _is_mostly_cyrillic(text):
+        result["title_ru"], result["description_ru"] = title, body
+    else:
+        result["title_en"], result["description_en"] = title, body
     return result
 
 
@@ -201,9 +268,13 @@ def _resolve_root_folder_id(service) -> str:
     return folder_id
 
 
-def _download_file(service, file_id: str, dest_path: Path) -> None:
+def _download_file(service, file_id: str, dest_path: Path, mime_type: str = "") -> None:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    request = service.files().get_media(fileId=file_id)
+    # Google Docs/Sheets/Slides have no binary content — must be exported, not downloaded.
+    if mime_type == "application/vnd.google-apps.document":
+        request = service.files().export_media(fileId=file_id, mimeType="text/plain")
+    else:
+        request = service.files().get_media(fileId=file_id)
     with open(dest_path, "wb") as fh:
         downloader = MediaIoBaseDownload(fh, request)
         done = False
@@ -270,7 +341,7 @@ def fetch_new_products() -> list[ProductFolder]:
             dest_dir = download_base / name
             dest = dest_dir / "description.txt"
             try:
-                _download_file(service, desc_item["id"], dest)
+                _download_file(service, desc_item["id"], dest, desc_item.get("mimeType", ""))
             except Exception as exc:
                 log_error(name, f"description.txt download failed: {exc}")
                 continue
@@ -301,7 +372,7 @@ def fetch_new_products() -> list[ProductFolder]:
             # Special case: always download description.txt if present
             if fname.lower() == "description.txt":
                 try:
-                    _download_file(service, f["id"], dest)
+                    _download_file(service, f["id"], dest, f.get("mimeType", ""))
                     product.description_file = dest
                     logger.info("Downloaded description file for %s", name)
                 except Exception as exc:

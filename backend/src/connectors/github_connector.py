@@ -41,6 +41,12 @@ class GitHubConnector(BaseConnector):
         self._git_push()
         return True
 
+    def publish_static_files(self) -> bool:
+        """Commit and push any already-regenerated static files (e.g. merchant feeds)
+        without rendering a product page."""
+        self._git_push()
+        return True
+
     def _render_product_page(self, folder: str, product: dict) -> None:
         """Write an Etsy-style static HTML page for the product in EN and RU."""
         ai = product.get("ai", {})
