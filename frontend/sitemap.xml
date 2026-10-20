@@ -134,23 +134,5 @@
     <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260520_280.html"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260520_280.html"/>
   </url>
-  <url>
-    <loc>https://www.likaval.com/ru/products/20260216_100.html</loc>
-    <lastmod>2026-06-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260216_100.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/products/20260216_100.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260216_100.html"/>
-  </url>
-  <url>
-    <loc>https://www.likaval.com/en/products/20260216_100.html</loc>
-    <lastmod>2026-06-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.likaval.com/en/products/20260216_100.html"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://www.likaval.com/ru/products/20260216_100.html"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.likaval.com/ru/products/20260216_100.html"/>
-  </url>
 
 </urlset>
