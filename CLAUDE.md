@@ -4,7 +4,7 @@
 
 LikaVal is an automated content publishing pipeline for a handmade ceramics brand (Lika Val, Petah Tikva, Israel). It orchestrates: **Google Drive → AI generation → multi-platform publishing** (GitHub Pages, Etsy, Facebook).
 
-Target hardware: Raspberry Pi 4B (4 GB RAM). Keep resource usage minimal.
+Production runs on a laptop (formerly a Raspberry Pi 4B, 4 GB RAM) at `10.0.0.100`. Keep resource usage modest.
 
 ## Architecture
 
@@ -57,11 +57,13 @@ frontend/                    # Static multilingual site: en/ ru/ he/
   isolated calls (much more reliable for this size model) before giving up. Never trust a
   translation result without checking it actually changed script.
 
-## Deployment (Raspberry Pi)
+## Deployment (laptop)
 
-The Pi (`10.0.0.100`) runs the real production `likaval-backend` container from
+The deployment was migrated from the Raspberry Pi to a laptop that kept the same address
+(`10.0.0.100`). It runs the real production `likaval-backend` container from
 `/home/oleg/LikaVal` (a separate checkout of this repo, not synced automatically with this
-machine). SSH: user `oleg` (password known to the user — ask them, don't guess).
+machine). SSH: user `oleg` (password known to the user — ask them, don't guess). The user,
+path and architecture were carried over from the Pi era and not re-verified on the laptop.
 
 - **`docker-compose.yml` bind-mounts `.git` and `frontend/`** in addition to
   `config`/`state`/`logs`/`backend/downloads`. This is required: without it, every
@@ -76,11 +78,11 @@ machine). SSH: user `oleg` (password known to the user — ask them, don't guess
   bind-mounted `.git` is host-owned (`oleg`) but the container runs as root; without this every
   git operation fails with "detected dubious ownership".
 - **`.env` and `config/gdrive_credentials.json` are gitignored secrets** — they do **not**
-  arrive via `git pull`/image rebuild. They must already exist at those exact paths on the Pi
+  arrive via `git pull`/image rebuild. They must already exist at those exact paths on the laptop
   (`/home/oleg/LikaVal/.env`, `/home/oleg/LikaVal/config/gdrive_credentials.json`) before the
   container can do anything useful; if missing or stale, copy them from this machine (`scp`).
 - **Redeploying a `backend/` source change:** `backend/` is baked into the image (not
-  bind-mounted), so editing `backend/src/*.py` or `backend/main.py` requires, on the Pi:
+  bind-mounted), so editing `backend/src/*.py` or `backend/main.py` requires, on the laptop:
   `docker compose build likaval-backend` then `docker compose up -d --force-recreate likaval-backend`.
   A plain `docker restart` does **not** pick up source or `.env` changes.
 - **Triggering a one-off run** outside the `0 2 * * *` cron: `docker exec likaval-backend
@@ -89,6 +91,10 @@ machine). SSH: user `oleg` (password known to the user — ask them, don't guess
 ## MCP Servers
 
 ### Etsy (`mcp__etsy__*`)
+**Etsy rejected our API key request, so the Open API is not an option (maybe later). Listings are
+created only through the interactive Playwright session described below — do not build an API
+connector. The pipeline's `EtsyConnector` stays a disabled stub; nothing posts to Etsy automatically.**
+
 Configured at `mcp.api.etsycloud.com` in `.claude/settings.json` — but as of this writing has
 not actually been reachable/verified in a session (no `mcp__etsy__*` tools have shown up).
 `backend/src/connectors/etsy_connector.py` is an **unimplemented stub** — `_create_listing_via_browser`,
@@ -105,7 +111,7 @@ own, and Etsy's bot detection makes an unattended headless login unreliable (a f
 request 403'd once in practice). A saved Etsy login session for shop **LVSoulCeramics**
 (`adelina.valik@gmail.com`) already exists in this machine's local Playwright browser profile,
 so logins have so far just worked without needing the password. Product images live only on
-the Pi (`backend/downloads/{folder}/`) — `scp` them to a local path under this repo's
+the laptop (`backend/downloads/{folder}/`) — `scp` them to a local path under this repo's
 `.playwright-mcp/` directory (Playwright's file-upload tool refuses paths outside the working
 directory) before uploading. **Always save as draft, never publish directly**, so the user
 reviews before it goes live — prefer the hand-written tags from the original `description.txt`
@@ -140,6 +146,8 @@ vision + text pair concurrently needs its own port per model and enough of the J
 - `/project:publish-product` — Run the full pipeline for a specific product folder
 - `/project:generate-content` — Re-generate AI content for a product (no publishing)
 - `/project:check-state` — Inspect current state of products.json and sync_log.json
+- `/project:etsy-draft FOLDER` — Create an Etsy **draft** (10 photos + video) for one product via the
+  interactive Playwright session
 - `/project:etsy-sync` — Etsy listing status/reference doc — see the Etsy section under
   Deployment above for how listings are actually created (interactive Playwright, not this
   connector)
@@ -181,7 +189,7 @@ vision + text pair concurrently needs its own port per model and enough of the J
 - **Don't** force-push to `gh-pages` — the GitHub connector deploys via a temporary worktree,
   not `git subtree push` (the module docstring says subtree but the code doesn't use it)
 - **Don't** change the product folder naming convention — state_manager keys off it
-- **Don't** assume a `backend/` source edit is live on the Pi until you've rebuilt the image
+- **Don't** assume a `backend/` source edit is live on the laptop until you've rebuilt the image
   and force-recreated the container (see Deployment section) — it is not bind-mounted
 - **Don't** trust `ai.title_ru`/`ai.title_en` blindly after a translation call — check the
   script actually matches the target language (see the Jetson translation note above)

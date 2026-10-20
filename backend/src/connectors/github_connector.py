@@ -5,8 +5,10 @@ then deploys the frontend/ subdirectory to the gh-pages branch root via
 `git subtree push`, which triggers GitHub Pages to update the live site.
 """
 
+import json
 import logging
 import shutil
+from html import escape
 from pathlib import Path
 
 import git
@@ -109,6 +111,7 @@ class GitHubConnector(BaseConnector):
         for lang in ("en", "ru"):
             title = ai.get(f"title_{lang}") or ai.get("title_en", folder)
             description = ai.get(f"description_{lang}") or ai.get("description_en", "")
+            description_html = escape(description).replace("\n", "<br />\n")
             price_ils = product.get("price_ils", "")
             price_usd = product.get("price_usd", "")
             tags = ai.get("seo_tags", [])
@@ -207,18 +210,33 @@ class GitHubConnector(BaseConnector):
                 '\n      <a href="/ru/kruzhok.html">Кружок керамики</a>'
             ) if lang == "ru" else ""
 
-            json_ld = (
-                '{{"@context":"https://schema.org","@type":"Product",'
-                f'"name":"{title}",'
-                f'"description":"{description[:200]}",'
-                f'"image":"{og_image_url}",'
-                '"brand":{{"@type":"Brand","name":"Лика Вал / Soul Ceramics"}},'
-                f'"offers":{{"@type":"Offer","priceCurrency":"ILS","price":"{price_ils}",'
-                f'"availability":"{schema_avail}",'
-                '"seller":{{"@type":"LocalBusiness","name":"Soul Ceramics — Лика Вал",'
-                '"address":{{"@type":"PostalAddress","streetAddress":"Нахалат Цви 1",'
-                '"addressLocality":"Петах-Тиква","addressCountry":"IL"}}}}}}}}'
-            )
+            json_ld = json.dumps(
+                {
+                    "@context": "https://schema.org",
+                    "@type": "Product",
+                    "name": title,
+                    "description": description[:200],
+                    "image": og_image_url,
+                    "brand": {"@type": "Brand", "name": "Лика Вал / Soul Ceramics"},
+                    "offers": {
+                        "@type": "Offer",
+                        "priceCurrency": "ILS",
+                        "price": str(price_ils),
+                        "availability": schema_avail,
+                        "seller": {
+                            "@type": "LocalBusiness",
+                            "name": "Soul Ceramics — Лика Вал",
+                            "address": {
+                                "@type": "PostalAddress",
+                                "streetAddress": "Нахалат Цви 1",
+                                "addressLocality": "Петах-Тиква",
+                                "addressCountry": "IL",
+                            },
+                        },
+                    },
+                },
+                ensure_ascii=False,
+            ).replace("</", "<\\/")
 
             html = f"""<!DOCTYPE html>
 <html lang="{lang}">
@@ -315,7 +333,7 @@ class GitHubConnector(BaseConnector):
 
         <div class="product-section">
           <div class="product-section-title">{desc_label}</div>
-          <p class="product-description">{description}</p>
+          <p class="product-description">{description_html}</p>
         </div>
 
         <div class="product-section">
@@ -369,9 +387,9 @@ class GitHubConnector(BaseConnector):
 
     def _update_catalog_page(self) -> None:
         """Regenerate Etsy-style catalog/shop pages for EN and RU."""
-        from backend.src.state_manager import load_products
+        from backend.src.state_manager import active_products
 
-        products = load_products()
+        products = active_products()
         total = len(products)
         available = sum(1 for p in products.values() if p.get("status") != "sold")
 
@@ -540,10 +558,10 @@ class GitHubConnector(BaseConnector):
 
     def _update_ru_homepage(self) -> None:
         """Inject the 3 latest products into the RU homepage latest-works section."""
-        from backend.src.state_manager import load_products
+        from backend.src.state_manager import active_products
         import re as _re
 
-        products = load_products()
+        products = active_products()
         available = [
             (k, v) for k, v in products.items() if v.get("status") != "sold"
         ]
@@ -619,7 +637,7 @@ class GitHubConnector(BaseConnector):
 
         # Stage and commit on main
         frontend_rel = frontend_abs.relative_to(repo_root)
-        repo.index.add([str(frontend_rel)])
+        repo.git.add("-A", "--", str(frontend_rel))
 
         if repo.index.diff("HEAD") or repo.untracked_files:
             repo.index.commit(self._cfg["commit_message"])
@@ -651,13 +669,21 @@ class GitHubConnector(BaseConnector):
 
             try:
                 # Copy frontend/ contents into the worktree root (strip the frontend/ prefix)
+                kept: set[Path] = set()
                 for src in frontend_abs.rglob("*"):
                     if not src.is_file():
                         continue
                     rel = src.relative_to(frontend_abs)
+                    kept.add(rel)
                     dest = Path(tmpdir) / rel
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(src, dest)
+
+                # Mirror deletions so removed products disappear from the live site
+                for dest in Path(tmpdir).rglob("*"):
+                    rel = dest.relative_to(tmpdir)
+                    if dest.is_file() and rel.parts[0] != ".git" and rel not in kept:
+                        dest.unlink()
 
                 # Commit and push from the worktree
                 wt_repo = git.Repo(tmpdir)

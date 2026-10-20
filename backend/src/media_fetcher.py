@@ -20,12 +20,16 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2.service_account import Credentials
 
 from backend.src.config import CONFIG
 from backend.src.state_manager import get_product, is_processed, upsert_product, log_error
+
+register_heif_opener()
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +65,7 @@ class ProductFolder:
 
 _ENGLISH_MARKER_RE = re.compile(r"^.*\bENGLISH\b.*$", re.IGNORECASE | re.MULTILINE)
 _LANG_HEADER_RE = re.compile(r"^\s*(RUSSIAN|РУССКИЙ)\b", re.IGNORECASE)
-_TAGS_HEADER_RE = re.compile(r"^\s*(Теги|Tags)\b", re.IGNORECASE)
+_TAGS_HEADER_RE = re.compile(r"^\s*(\d+\s+)?(Теги|тегов|Tags|Etsy\s+tags)\b", re.IGNORECASE)
 _NUMBERED_LINE_RE = re.compile(r"^\s*\d+[.)]\s+\S")
 _TRAILING_DIVIDER_RE = re.compile(r"(\n\s*_{3,}\s*)+\Z")
 
@@ -76,6 +80,20 @@ def _strip_tags_block(lines: list[str]) -> list[str]:
     while end > 0 and (not lines[end - 1].strip() or _NUMBERED_LINE_RE.match(lines[end - 1])):
         end -= 1
     return lines[:end]
+
+
+def _extract_tags(block: str) -> list[str]:
+    """Hand-written tags that follow a 'Теги'/'Tags' header: numbered lines or a comma list."""
+    lines = block.split("\n")
+    start = next((i for i, line in enumerate(lines) if _TAGS_HEADER_RE.match(line)), None)
+    if start is None:
+        return []
+    tags: list[str] = []
+    for line in lines[start + 1:]:
+        for part in re.sub(r"^\s*\d+[.)]\s*", "", line).split(","):
+            if part.strip():
+                tags.append(part.strip())
+    return tags
 
 
 def _extract_title_and_body(block: str) -> tuple[str, str]:
@@ -125,7 +143,10 @@ def parse_description_file(path: Path) -> dict:
     Missing fields are returned as empty strings.
     """
     text = path.read_text(encoding="utf-8-sig").strip()
-    result: dict = {"title_en": "", "description_en": "", "title_ru": "", "description_ru": ""}
+    result: dict = {
+        "title_en": "", "description_en": "", "title_ru": "", "description_ru": "",
+        "tags_en": [], "tags_ru": [],
+    }
 
     # Legacy labelled format, still supported.
     if re.search(r"\n\s*(EN|RU)\s*:\s*\n", text, flags=re.IGNORECASE):
@@ -162,9 +183,23 @@ def parse_description_file(path: Path) -> dict:
 
         result["title_ru"], result["description_ru"] = _extract_title_and_body(ru_block)
         result["title_en"], result["description_en"] = _extract_title_and_body(en_block)
+        result["tags_ru"], result["tags_en"] = _extract_tags(ru_block), _extract_tags(en_block)
         return result
 
-    # No EN/RU split — a single free-form block; detect the language.
+    # No marker: two blocks back to back in either order — split where the script flips.
+    lines = text.split("\n")
+    scripts = [_is_mostly_cyrillic(line) if line.strip() else None for line in lines]
+    first = next((x for x in scripts if x is not None), None)
+    flip = next((i for i, x in enumerate(scripts) if x is not None and x != first), None)
+    if flip is not None:
+        blocks = ("\n".join(lines[:flip]), "\n".join(lines[flip:]))
+        ru_block, en_block = blocks if first else blocks[::-1]
+        result["title_ru"], result["description_ru"] = _extract_title_and_body(ru_block)
+        result["title_en"], result["description_en"] = _extract_title_and_body(en_block)
+        result["tags_ru"], result["tags_en"] = _extract_tags(ru_block), _extract_tags(en_block)
+        return result
+
+    # A single free-form block; detect the language.
     title, body = _extract_title_and_body(text)
     if _is_mostly_cyrillic(text):
         result["title_ru"], result["description_ru"] = title, body
@@ -268,6 +303,19 @@ def _resolve_root_folder_id(service) -> str:
     return folder_id
 
 
+def _find_description_item(files: list[dict]) -> dict | None:
+    """Return the folder's single text file: a Google Doc, a text/plain upload or any *.txt,
+    whatever its name (it has been misspelled, e.g. "discription.txt")."""
+    return next(
+        (
+            f for f in files
+            if f.get("mimeType") in ("application/vnd.google-apps.document", "text/plain")
+            or f["name"].lower().endswith(".txt")
+        ),
+        None,
+    )
+
+
 def _download_file(service, file_id: str, dest_path: Path, mime_type: str = "") -> None:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     # Google Docs/Sheets/Slides have no binary content — must be exported, not downloaded.
@@ -281,6 +329,15 @@ def _download_file(service, file_id: str, dest_path: Path, mime_type: str = "") 
         while not done:
             _, done = downloader.next_chunk()
     logger.info("Downloaded %s", dest_path)
+
+
+def _heic_to_jpeg(heic_path: Path) -> Path:
+    """Convert a downloaded HEIC/HEIF photo to JPEG (browsers and Etsy can't use HEIC)."""
+    jpeg_path = heic_path.with_suffix(".jpg")
+    with Image.open(heic_path) as img:
+        ImageOps.exif_transpose(img).convert("RGB").save(jpeg_path, "JPEG", quality=92)
+    heic_path.unlink()
+    return jpeg_path
 
 
 def fetch_new_products() -> list[ProductFolder]:
@@ -323,6 +380,10 @@ def fetch_new_products() -> list[ProductFolder]:
 
         existing = get_product(name)
 
+        if existing and existing.get("ignored"):
+            logger.debug("Ignored product: %s", name)
+            continue
+
         # Fully processed (has text content) → skip entirely
         if is_processed(name):
             logger.debug("Already processed: %s", name)
@@ -330,20 +391,18 @@ def fetch_new_products() -> list[ProductFolder]:
 
         # Pending text file → only check Drive for description.txt, reuse local images
         if existing and existing.get("pending_text"):
-            logger.info("Pending text — re-checking Drive for description.txt: %s", name)
+            logger.info("Pending text — re-checking Drive for a text file: %s", name)
             files = _list_items(service, folder["id"])
-            desc_item = next(
-                (f for f in files if f["name"].lower() == "description.txt"), None
-            )
+            desc_item = _find_description_item(files)
             if not desc_item:
-                logger.debug("Still no description.txt for pending product: %s", name)
+                logger.debug("Still no text file for pending product: %s", name)
                 continue
             dest_dir = download_base / name
             dest = dest_dir / "description.txt"
             try:
                 _download_file(service, desc_item["id"], dest, desc_item.get("mimeType", ""))
             except Exception as exc:
-                log_error(name, f"description.txt download failed: {exc}")
+                log_error(name, f"Description download failed: {exc}")
                 continue
             # Return with existing local image/video paths from state (no re-download)
             pf = ProductFolder(
@@ -352,7 +411,7 @@ def fetch_new_products() -> list[ProductFolder]:
                 videos=[Path(p) for p in existing.get("videos", []) if Path(p).exists()],
                 description_file=dest,
             )
-            logger.info("Found description.txt for pending product %s — queued for processing", name)
+            logger.info("Found text file for pending product %s — queued for processing", name)
             new_products.append(pf)
             continue
 
@@ -364,17 +423,18 @@ def fetch_new_products() -> list[ProductFolder]:
 
         image_count = 0
         video_count = 0
+        desc_item = _find_description_item(files)
 
         for f in files:
             fname = f["name"]
             dest = dest_dir / fname
 
-            # Special case: always download description.txt if present
-            if fname.lower() == "description.txt":
+            if f is desc_item:
+                dest = dest_dir / "description.txt"
                 try:
                     _download_file(service, f["id"], dest, f.get("mimeType", ""))
                     product.description_file = dest
-                    logger.info("Downloaded description file for %s", name)
+                    logger.info("Downloaded description file %s for %s", fname, name)
                 except Exception as exc:
                     log_error(name, f"Download failed for {fname}: {exc}")
                 continue
@@ -396,6 +456,8 @@ def fetch_new_products() -> list[ProductFolder]:
 
             try:
                 _download_file(service, f["id"], dest)
+                if ext in ("heic", "heif"):
+                    dest = _heic_to_jpeg(dest)
             except Exception as exc:
                 log_error(name, f"Download failed for {fname}: {exc}")
                 continue

@@ -52,6 +52,11 @@ def save_products(products: dict[str, dict]) -> None:
     _save_json(_PRODUCTS_FILE, products)
 
 
+def active_products() -> dict[str, dict]:
+    """Products shown on the site and in feeds — excludes ones flagged ``ignored``."""
+    return {k: v for k, v in load_products().items() if not v.get("ignored")}
+
+
 def get_product(folder: str) -> dict | None:
     return load_products().get(folder)
 

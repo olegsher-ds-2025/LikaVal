@@ -22,7 +22,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from backend.src.config import CONFIG
-from backend.src.state_manager import load_products, upsert_product
+from backend.src.state_manager import active_products, upsert_product
 from backend.src.ai_module import (
     translate_to_russian, translate_to_english,
     check_llm_health, _chat,
@@ -178,7 +178,7 @@ def _needs_short_title(title: str) -> bool:
 
 
 def build_feeds(output_dir: Path, ollama_ok: bool) -> None:
-    products = load_products()
+    products = active_products()
 
     rows_en: list[dict] = []
     rows_ru: list[dict] = []

@@ -130,6 +130,7 @@ def run_pipeline() -> None:
                     "title_ru":       title_ru,
                     "description_ru": desc_ru,
                     "seo_tags":       [],
+                    "etsy_tags":      parsed["tags_en"],
                     "etsy_listing":   "",
                     "social_post_ru": "",
                 }

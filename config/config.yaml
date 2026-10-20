@@ -97,7 +97,7 @@ gdrive:
   folder_name: "${GDRIVE_FOLDER_NAME:Lika_ETSY}"  # looked up by name when folder_id is empty
   credentials_file: "${GDRIVE_CREDENTIALS_FILE:config/gdrive_credentials.json}"
   download_dir: "backend/downloads"
-  supported_image_formats: [jpg, jpeg, png, webp]
+  supported_image_formats: [jpg, jpeg, png, webp, heic, heif]
   supported_video_formats: [mp4, mov]
   max_images: 10   # maximum images to download per product folder
   max_videos: 1    # maximum videos to download per product folder

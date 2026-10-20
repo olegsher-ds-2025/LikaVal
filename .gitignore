@@ -38,3 +38,7 @@ Thumbs.db
 *.swo
 frontend/assets/products/**/*.MOV
 frontend/assets/products/**/*.mov
+
+# Local tooling
+.playwright-mcp/
+.claude/settings.local.json
